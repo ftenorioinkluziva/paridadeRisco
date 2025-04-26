@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'http://127.0.0.1:5001/api';
 
 // Criar o contexto
 const PortfolioContext = createContext();

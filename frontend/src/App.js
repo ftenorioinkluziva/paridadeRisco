@@ -8,7 +8,7 @@ import TransactionManager from './components/TransactionManager';
 import LastUpdateIndicator from './components/LastUpdateIndicator'; */
 
 // Configuração da URL base da API
-const API_URL = 'http://localhost:5001/api';
+const API_URL = 'http://127.0.0.1:5001/api';
 
 function App() {
   // Estados para armazenar dados

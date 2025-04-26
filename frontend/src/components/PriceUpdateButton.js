@@ -7,7 +7,7 @@ const PriceUpdateButton = () => {
   const [result, setResult] = useState({ success: null, message: '' });
   
   // API URL
-  const API_URL = 'http://localhost:5001/api';
+  const API_URL = 'http://127.0.0.1:5001/api';
   
   const handlePriceUpdate = async () => {
     if (loading) return; // Prevenir cliques múltiplos
