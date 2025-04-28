@@ -8,7 +8,7 @@ import TransactionManager from './components/TransactionManager';
 import LastUpdateIndicator from './components/LastUpdateIndicator'; */
 
 // Configuração da URL base da API
-const API_URL = 'https://a19a59e760eb.ngrok.app:5001/api';
+const API_URL = 'https://4319bcfe64e3.ngrok.app:5001/api';
 
 function App() {
   // Estados para armazenar dados

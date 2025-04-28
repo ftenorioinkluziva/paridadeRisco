@@ -7,7 +7,7 @@ const PriceUpdateButton = () => {
   const [result, setResult] = useState({ success: null, message: '' });
   
   // API URL
-  const API_URL = 'https://a19a59e760eb.ngrok.app:5001/api';
+  const API_URL = 'https://4319bcfe64e3.ngrok.app:5001/api';
   
   const handlePriceUpdate = async () => {
     if (loading) return; // Prevenir cliques múltiplos

@@ -7,7 +7,7 @@ const LastUpdateIndicator = () => {
   const [loading, setLoading] = useState(true);
   
   // API URL
-  const API_URL = 'https://a19a59e760eb.ngrok.app:5001/api';
+  const API_URL = 'https://4319bcfe64e3.ngrok.app:5001/api';
   
   // Função para obter a data da última atualização
   const fetchLastUpdate = async () => {
