@@ -18,7 +18,7 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
   });
 
   // API URL
-  const API_URL = 'https://4319bcfe64e3.ngrok.app/api';
+  const API_URL = 'https://fb89d827e7a0.ngrok.app/api';
 
   // Carregar todas as cestas
   const carregarCestas = async () => {
