@@ -30,3 +30,6 @@ services:
     environment:
 <<<<<<< HEAD
       - REACT_APP_API_URL=https://fb89d827e7a0.ngrok.app/api
+=======
+      - REACT_APP_API_URL=https://4319bcfe64e3.ngrok.app/api
+>>>>>>> 2d003c7228ad0efb83f1bd2a6840edfdd735e476
