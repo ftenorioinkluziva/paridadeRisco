@@ -1,18 +1,18 @@
 // src/contexts/PortfolioContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
-const API_URL = 'https://4319bcfe64e3.ngrok.app/api';
+const API_URL = 'http://localhost:5001/api';
 
-// Criar o contexto
+// Create the context
 const PortfolioContext = createContext();
 
-// Hook personalizado para usar o contexto
+// Custom hook to use the context
 export const usePortfolio = () => useContext(PortfolioContext);
 
-// Provedor do contexto
+// Context provider
 export const PortfolioProvider = ({ children }) => {
-  // Estados
+  // States
   const [transactions, setTransactions] = useState([]);
   const [assets, setAssets] = useState([]);
   const [investmentFunds, setInvestmentFunds] = useState([]);
@@ -24,21 +24,23 @@ export const PortfolioProvider = ({ children }) => {
     totalProfit: 0,
     profitPercentage: 0,
     assetsTotalValue: 0,
-    fundsTotalValue: 0
+    fundsTotalValue: 0,
+    cashBalance: 0
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [updatingPrices, setUpdatingPrices] = useState(false);
 
-
-  const updatePricesRTD = async () => {
+  // Function to update prices via RTD
+  const updatePricesRTD = useCallback(async () => {
     setUpdatingPrices(true);
     try {
-      // Chamar endpoint de atualização de preços
+      // Call the price update endpoint
       const response = await axios.post(`${API_URL}/update-prices-rtd`, {
-        background: false // Queremos esperar pela conclusão antes de continuar
+        background: false // Wait for completion before continuing
       });
       
       console.log('Price update result:', response.data);
@@ -50,30 +52,29 @@ export const PortfolioProvider = ({ children }) => {
     } finally {
       setUpdatingPrices(false);
     }
-  };
+  }, []);
 
-  // Função para buscar todos os dados
-
-  const fetchAllData = async () => {
+  // Function to fetch all data
+  const fetchAllData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      // Primeiro atualizar os preços via RTD
+      // First update prices via RTD
       await updatePricesRTD();
       
-      // Depois buscar os dados atualizados
-      // Buscar ativos
+      // Then fetch updated data
+      // Fetch assets
       const assetsResponse = await axios.get(`${API_URL}/ativos`);
       setAssets(assetsResponse.data);
 
-      // Buscar transações
+      // Fetch transactions
       const transactionsResponse = await axios.get(`${API_URL}/transacoes`);
       setTransactions(transactionsResponse.data);
       
-      // Buscar fundos de investimento
+      // Fetch investment funds
       const fundsResponse = await axios.get(`${API_URL}/investment-funds`);
       setInvestmentFunds(fundsResponse.data);
       
-      // Buscar saldo em caixa
+      // Fetch cash balance
       const cashResponse = await axios.get(`${API_URL}/cash-balance`);
       setCashBalance(cashResponse.data.value || 0);
 
@@ -85,17 +86,18 @@ export const PortfolioProvider = ({ children }) => {
     } finally {
       setIsRefreshing(false);
     }
-  };
-  // Calcular portfólio baseado nas transações
-  const calculatePortfolio = () => {
+  }, [updatePricesRTD]);
+
+  // Calculate portfolio based on transactions
+  const calculatePortfolio = useCallback(() => {
     const calculatedPortfolio = {};
 
-    // Ordenar transações por data
+    // Sort transactions by date
     const sortedTransactions = [...transactions].sort((a, b) => 
       new Date(a.date) - new Date(b.date)
     );
 
-    // Processar transações
+    // Process transactions
     sortedTransactions.forEach(transaction => {
       const ativoId = transaction.ativo_id;
       const asset = assets.find(a => a.id === ativoId);
@@ -117,13 +119,13 @@ export const PortfolioProvider = ({ children }) => {
       if (transaction.type === 'buy') {
         const oldValue = assetData.quantity * assetData.averagePrice;
         const newValue = transaction.quantity * transaction.price;
-        const newQuantity = assetData.quantity + transaction.quantity;
+        const newQuantity = assetData.quantity + parseFloat(transaction.quantity);
         
         assetData.averagePrice = newQuantity > 0 ? (oldValue + newValue) / newQuantity : 0;
-        assetData.quantity += transaction.quantity;
-        assetData.totalInvestment += transaction.quantity * transaction.price;
+        assetData.quantity += parseFloat(transaction.quantity);
+        assetData.totalInvestment += parseFloat(transaction.quantity) * parseFloat(transaction.price);
       } else if (transaction.type === 'sell') {
-        assetData.quantity -= transaction.quantity;
+        assetData.quantity -= parseFloat(transaction.quantity);
         
         if (assetData.quantity > 0) {
           assetData.totalInvestment = assetData.quantity * assetData.averagePrice;
@@ -133,7 +135,7 @@ export const PortfolioProvider = ({ children }) => {
         }
       }
       
-      // Calcular valores atuais
+      // Calculate current values
       assetData.currentPrice = asset.preco_atual;
       assetData.currentValue = assetData.quantity * assetData.currentPrice;
       assetData.profit = assetData.currentValue - assetData.totalInvestment;
@@ -142,12 +144,12 @@ export const PortfolioProvider = ({ children }) => {
         : 0;
     });
     
-    // Filtrar ativos com quantidade > 0
+    // Filter assets with quantity > 0
     return Object.values(calculatedPortfolio).filter(asset => asset.quantity > 0);
-  };
+  }, [transactions, assets]);
 
-  // Calcular totais
-  const calculateTotals = (portfolioData) => {
+  // Calculate totals
+  const calculateTotals = useCallback((portfolioData) => {
     const assetsTotalInvestment = portfolioData.reduce((sum, asset) => sum + asset.totalInvestment, 0);
     const assetsTotalValue = portfolioData.reduce((sum, asset) => sum + asset.currentValue, 0);
     const assetsProfit = portfolioData.reduce((sum, asset) => sum + asset.profit, 0);
@@ -171,16 +173,16 @@ export const PortfolioProvider = ({ children }) => {
       fundsTotalValue,
       cashBalance
     };
-  };
+  }, [investmentFunds, cashBalance]);
 
-  // Operações CRUD
+  // CRUD Operations
   const addTransaction = async (transactionData) => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_URL}/transacoes`, transactionData);
       
       setTransactions([...transactions, response.data]);
-      await fetchAllData(); // Buscar dados atualizados
+      await fetchAllData(); // Fetch updated data
       
       return { success: true, data: response.data };
     } catch (err) {
@@ -197,7 +199,7 @@ export const PortfolioProvider = ({ children }) => {
       const response = await axios.post(`${API_URL}/investment-funds`, fundData);
       
       setInvestmentFunds([...investmentFunds, response.data]);
-      await fetchAllData(); // Buscar dados atualizados
+      await fetchAllData(); // Fetch updated data
       
       return { success: true, data: response.data };
     } catch (err) {
@@ -216,7 +218,7 @@ export const PortfolioProvider = ({ children }) => {
       setInvestmentFunds(
         investmentFunds.map(fund => fund.id === id ? response.data : fund)
       );
-      await fetchAllData(); // Buscar dados atualizados
+      await fetchAllData(); // Fetch updated data
       
       return { success: true, data: response.data };
     } catch (err) {
@@ -233,7 +235,7 @@ export const PortfolioProvider = ({ children }) => {
       await axios.delete(`${API_URL}/investment-funds/${id}`);
       
       setInvestmentFunds(investmentFunds.filter(fund => fund.id !== id));
-      await fetchAllData(); // Buscar dados atualizados
+      await fetchAllData(); // Fetch updated data
       
       return { success: true };
     } catch (err) {
@@ -250,7 +252,7 @@ export const PortfolioProvider = ({ children }) => {
       const response = await axios.put(`${API_URL}/cash-balance`, { value: parseFloat(newValue) });
       
       setCashBalance(response.data.value);
-      await fetchAllData(); // Buscar dados atualizados
+      await fetchAllData(); // Fetch updated data
       
       return { success: true, data: response.data };
     } catch (err) {
@@ -261,26 +263,26 @@ export const PortfolioProvider = ({ children }) => {
     }
   };
 
-  // Efeito para carregar dados iniciais
+  // Effect to load initial data
   useEffect(() => {
     fetchAllData();
     
-    // Configurar polling para atualização automática (a cada 30 segundos)
+    // Set up polling for automatic updates (every 30 seconds)
     const intervalId = setInterval(fetchAllData, 30000);
     
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchAllData]);
 
-  // Efeito para recalcular o portfólio quando as transações ou ativos mudarem
+  // Effect to recalculate portfolio when transactions or assets change
   useEffect(() => {
     if (assets.length > 0 && transactions.length > 0) {
       const calculatedPortfolio = calculatePortfolio();
       setPortfolio(calculatedPortfolio);
       setTotals(calculateTotals(calculatedPortfolio));
     }
-  }, [transactions, assets, investmentFunds, cashBalance]);
+  }, [transactions, assets, investmentFunds, cashBalance, calculatePortfolio, calculateTotals]);
 
-  // Formatador de moeda
+  // Currency formatter
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', { 
       style: 'currency', 
@@ -288,9 +290,9 @@ export const PortfolioProvider = ({ children }) => {
     }).format(value);
   };
 
-  // Valor do contexto
+  // Context value
   const value = {
-    // Dados
+    // Data
     transactions,
     assets,
     investmentFunds,
@@ -299,11 +301,13 @@ export const PortfolioProvider = ({ children }) => {
     totals,
     loading,
     error,
+    success,
+    setSuccess,
     lastUpdate,
     isRefreshing,
     updatingPrices,
     
-    // Ações
+    // Actions
     fetchAllData,
     updatePricesRTD,
     addTransaction,
@@ -312,7 +316,7 @@ export const PortfolioProvider = ({ children }) => {
     deleteInvestmentFund,
     updateCashBalance,
     
-    // Utilitários
+    // Utilities
     formatCurrency
   };
 
@@ -322,3 +326,5 @@ export const PortfolioProvider = ({ children }) => {
     </PortfolioContext.Provider>
   );
 };
+
+export default PortfolioProvider;

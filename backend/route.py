@@ -106,6 +106,7 @@ def api_resumo_ativo(ticker):
     
     return jsonify(resultado)
 
+
 # Rota para obter resumo de múltiplos ativos
 @app.route('/api/resumo-varios', methods=['GET'])
 def api_resumo_varios():

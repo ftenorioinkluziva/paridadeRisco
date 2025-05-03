@@ -3,12 +3,12 @@ import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CestasManager from './components/CestasManager';
 import CestaComposition from './components/CestaComposition';
-import TransactionManager from './components/TransactionManager';
-/* import PriceUpdateButton from './components/PriceUpdateButton';
-import LastUpdateIndicator from './components/LastUpdateIndicator'; */
+import TransactionManager from './components/TransactionManager/index';
+import CustomDateRange from './components/CustomDateRange';
+import DateRangeDisplay from './components/DateRangeDisplay';
 
 // Configuração da URL base da API
-const API_URL = 'https://4319bcfe64e3.ngrok.app/api';
+const API_URL = 'http://localhost:5001/api';
 
 function App() {
   // Estados para armazenar dados
@@ -25,6 +25,10 @@ function App() {
   const [nomeCesta, setNomeCesta] = useState("Minha Cesta");
   const [exibirCesta, setExibirCesta] = useState(false);
   const [dadosCesta, setDadosCesta] = useState([]);
+
+  const [customStartDate, setCustomStartDate] = useState(null);
+  const [customEndDate, setCustomEndDate] = useState(null);
+  const [isCustomDateRange, setIsCustomDateRange] = useState(false);
   
   // Estado para armazenar dados históricos processados para cálculos consistentes
   const [dadosProcessados, setDadosProcessados] = useState({});
@@ -177,8 +181,8 @@ function App() {
       );
       
       // Pegar o primeiro valor para normalização
-      const primeiroValor = dadosOrdenados[0].fechamento_ajustado;
-      const ultimoValor = dadosOrdenados[dadosOrdenados.length - 1].fechamento_ajustado;
+      const primeiroValor = dadosOrdenados[0].fechamento;
+      const ultimoValor = dadosOrdenados[dadosOrdenados.length - 1].fechamento;
       
       if (!primeiroValor) continue;
       
@@ -193,8 +197,8 @@ function App() {
       // Calcular retornos diários e volatilidade
       const retornosDiarios = [];
       for (let i = 1; i < dadosOrdenados.length; i++) {
-        if (dadosOrdenados[i-1].fechamento_ajustado && dadosOrdenados[i].fechamento_ajustado) {
-          const retornoDiario = (dadosOrdenados[i].fechamento_ajustado / dadosOrdenados[i-1].fechamento_ajustado - 1) * 100;
+        if (dadosOrdenados[i-1].fechamento && dadosOrdenados[i].fechamento) {
+          const retornoDiario = (dadosOrdenados[i].fechamento / dadosOrdenados[i-1].fechamento - 1) * 100;
           retornosDiarios.push(retornoDiario);
         }
       }
@@ -207,10 +211,10 @@ function App() {
       let picoDado = primeiroValor;
       
       for (const dado of dadosOrdenados) {
-        if (dado.fechamento_ajustado > picoDado) {
-          picoDado = dado.fechamento_ajustado;
+        if (dado.fechamento > picoDado) {
+          picoDado = dado.fechamento;
         } else {
-          const drawdown = (dado.fechamento_ajustado / picoDado - 1) * 100;
+          const drawdown = (dado.fechamento / picoDado - 1) * 100;
           if (drawdown < maxDrawdown) {
             maxDrawdown = drawdown;
           }
@@ -220,7 +224,7 @@ function App() {
       // Preparar dados para o gráfico comparativo (base 0)
       dadosComparativosTemp[ticker] = dadosOrdenados.map(dado => ({
         data: dado.data,
-        valor: ((dado.fechamento_ajustado / primeiroValor) - 1) * 100 // Retorno percentual desde o início
+        valor: ((dado.fechamento / primeiroValor) - 1) * 100 // Retorno percentual desde o início
       }));
       
       // Armazenar estatísticas calculadas
@@ -235,7 +239,7 @@ function App() {
         retornosDiarios,
         fechamentoAjustado: dadosOrdenados.map(d => ({
           data: d.data,
-          valor: d.fechamento_ajustado
+          valor: d.fechamento
         }))
       };
     }
@@ -259,6 +263,28 @@ function App() {
     // Recalcular cesta para exibição
     calcularCesta(dadosProcessados, cesta.ativos);
   };
+
+  const handleCustomDateRangeChange = (days, startDate, endDate) => {
+    // Update period state
+    setPeriodoComparativo(days);
+    
+    // Store custom date range
+    setCustomStartDate(startDate);
+    setCustomEndDate(endDate);
+    setIsCustomDateRange(true);
+    
+    // Log for debugging
+    console.log(`Custom date range selected: ${startDate} to ${endDate} (${days} days)`);
+  };
+  
+  //function to reset custom date range when a preset period is selected
+  const handlePeriodoChange = (dias) => {
+    setPeriodoComparativo(dias);
+    // Clear custom date range when user selects a preset
+    setIsCustomDateRange(false);
+    setCustomStartDate(null);
+    setCustomEndDate(null);
+  };  
 
   // Verificar status da API quando o componente carrega
   useEffect(() => {
@@ -308,23 +334,35 @@ function App() {
   useEffect(() => {
     const carregarDadosHistoricos = async () => {
       if (selecionados.length === 0) return;
-
+  
       setCarregando(true);
       try {
         const dadosHistoricos = {};
         
-        // Buscar dados históricos para cada ativo selecionado
+        // Process each selected ticker
         for (const ticker of selecionados) {
-          const response = await axios.get(
-            `${API_URL}/historico/${ticker}?dias=${periodoComparativo}`
-          );
+          let endpoint;
+          let response;
+          
+          if (isCustomDateRange && customStartDate && customEndDate) {
+            // Use the custom date range endpoint
+            console.log(`Using custom date range for ${ticker}: ${customStartDate} to ${customEndDate}`);
+            endpoint = `${API_URL}/historico-range/${ticker}?dataInicio=${customStartDate}&dataFim=${customEndDate}`;
+          } else {
+            // Use the existing period-based endpoint
+            endpoint = `${API_URL}/historico/${ticker}?dias=${periodoComparativo}`;
+          }
+          
+          response = await axios.get(endpoint);
           
           if (response.data && Array.isArray(response.data)) {
             dadosHistoricos[ticker] = response.data;
+          } else {
+            console.warn(`No data returned for ${ticker} or unexpected format`);
           }
         }
         
-        // Processar os dados históricos para cálculos consistentes
+        // Process the data as before
         processarDadosHistoricos(dadosHistoricos);
         
         setErro(null);
@@ -335,12 +373,12 @@ function App() {
         setCarregando(false);
       }
     };
-
+  
     if (apiStatus && apiStatus.status === 'online') {
       carregarDadosHistoricos();
     }
-  }, [selecionados, periodoComparativo, apiStatus, processarDadosHistoricos]);
-
+  }, [selecionados, periodoComparativo, customStartDate, customEndDate, isCustomDateRange, apiStatus, processarDadosHistoricos]);
+  
   // Manipular seleção/desseleção de ativos
   const handleSelecaoAtivo = (ticker) => {
     if (selecionados.includes(ticker)) {
@@ -539,8 +577,34 @@ function App() {
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+              {/* Display current date range information */}
+              {isCustomDateRange && customStartDate && customEndDate && (
+                <DateRangeDisplay 
+                  startDate={customStartDate} 
+                  endDate={customEndDate} 
+                  periodoComparativo={periodoComparativo} 
+                />
+              )}
+
+              <CustomDateRange onDateRangeChange={handleCustomDateRangeChange} />
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {Object.entries(periodos).map(([nome, dias]) => (
+                  <button
+                    key={nome}
+                    className={`px-3 py-1 rounded text-sm transition-colors duration-200 ${
+                      periodoComparativo === dias && !isCustomDateRange
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
+                    onClick={() => handlePeriodoChange(dias)}
+                  >
+                    {nome}
+                  </button>
+                ))}
+              </div>
+              
               <div className="flex justify-between items-center mb-3">
-                <h2 className="text-xl font-semibold text-gray-800">Período de Análise</h2>
                 <div>
                   <button 
                     onClick={() => setMostrarCestaConfig(!mostrarCestaConfig)}
@@ -555,22 +619,6 @@ function App() {
                     Gerenciar Cestas
                   </button>
                 </div>
-              </div>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {Object.entries(periodos).map(([nome, dias]) => (
-                  <button
-                    key={nome}
-                    className={`px-3 py-1 rounded text-sm transition-colors duration-200 ${
-                      periodoComparativo === dias 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                    onClick={() => setPeriodoComparativo(dias)}
-                  >
-                    {nome}
-                  </button>
-                ))}
               </div>
               
               {/* Botão para alternar visibilidade da cesta */}
@@ -682,7 +730,7 @@ function App() {
                         
                         return (
                           <tr key={ticker} className="hover:bg-gray-50">
-<td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                               {ativo ? ativo.nome : ticker}
                             </td>
                             <td className="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-900">

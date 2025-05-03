@@ -51,6 +51,9 @@ const TransactionManager = () => {
   const [activeTab, setActiveTab] = useState('portfolio');
   const [success, setSuccess] = useState(null);
 
+  // Estado para armazenar valores temporários para atualização de fundos
+  const [tempFundValues, setTempFundValues] = useState({});
+
   // Handler para mudanças no formulário
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -66,6 +69,17 @@ const TransactionManager = () => {
     setFundFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+  
+  // Handler para mudanças temporárias nos valores dos fundos
+  const handleTempFundChange = (fundId, field, value) => {
+    setTempFundValues(prev => ({
+      ...prev,
+      [fundId]: {
+        ...(prev[fundId] || {}),
+        [field]: value
+      }
     }));
   };
   
@@ -164,6 +178,40 @@ const TransactionManager = () => {
       setSuccess({ success: false, message: 'Error updating investment fund' });
     }
   };
+
+  // Atualizar apenas o valor atual de um fundo
+  const handleUpdateCurrentValue = async (fundId) => {
+    if (!tempFundValues[fundId] || !tempFundValues[fundId].current_value) {
+      setSuccess({ success: false, message: 'No changes to update' });
+      return;
+    }
+
+    try {
+      const fund = investmentFunds.find(f => f.id === fundId);
+      if (!fund) return;
+      
+      const updateData = { ...fund };
+      updateData.current_value = parseFloat(tempFundValues[fundId].current_value);
+      
+      const result = await updateInvestmentFund(fundId, updateData);
+      
+      if (result.success) {
+        setSuccess({ success: true, message: 'Fund current value updated successfully!' });
+        setTimeout(() => setSuccess(null), 3000);
+        
+        // Limpar valor temporário após atualização bem-sucedida
+        setTempFundValues(prev => {
+          const newValues = { ...prev };
+          delete newValues[fundId];
+          return newValues;
+        });
+      } else {
+        setSuccess({ success: false, message: result.error });
+      }
+    } catch (err) {
+      setSuccess({ success: false, message: 'Error updating fund current value' });
+    }
+  };
   
   // Excluir fundo de investimento
   const handleDeleteFund = async (id) => {
@@ -254,7 +302,15 @@ const TransactionManager = () => {
         </div>
       )}
       
-      {success && <div>{typeof success === 'object' ? success.message : success}</div>}
+      {success && (
+        <div className={`m-4 p-3 border-l-4 ${
+          success.success 
+            ? 'bg-green-100 border-green-500 text-green-700' 
+            : 'bg-red-100 border-red-500 text-red-700'
+        }`}>
+          <p>{typeof success === 'object' ? success.message : success}</p>
+        </div>
+      )}
       
       {/* Navigation tabs */}
       <div className="border-b border-gray-200">
@@ -848,16 +904,18 @@ const TransactionManager = () => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fund Name</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Investment</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Profit/Loss</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Return %</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Delete</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {investmentFunds.length > 0 ? investmentFunds.map(fund => {
                     const profit = fund.current_value - fund.initial_investment;
                     const returnPercentage = calculateFundReturn(fund);
+                    const tempValue = tempFundValues[fund.id]?.current_value;
                     
                     return (
                       <tr key={fund.id} className="hover:bg-gray-50">
@@ -880,14 +938,25 @@ const TransactionManager = () => {
                           />
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <input 
-                            type="number"
-                            value={fund.current_value || ''}
-                            onChange={(e) => handleUpdateFund(fund.id, 'current_value', e.target.value)}
-                            className="w-full p-1 border border-gray-300 rounded text-right"
-                            min="0"
-                            step="0.01"
-                          />
+                          <div className="flex items-center">
+                            <input 
+                              type="number"
+                              value={tempValue !== undefined ? tempValue : fund.current_value || ''}
+                              onChange={(e) => handleTempFundChange(fund.id, 'current_value', e.target.value)}
+                              className="w-full p-1 border border-gray-300 rounded text-right"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => handleUpdateCurrentValue(fund.id)}
+                            className="px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
+                            disabled={tempFundValues[fund.id]?.current_value === undefined}
+                          >
+                            Update Current Value
+                          </button>
                         </td>
                         <td className={`px-4 py-3 whitespace-nowrap text-sm text-right font-medium ${
                           profit >= 0 ? 'text-green-600' : 'text-red-600'
@@ -922,7 +991,7 @@ const TransactionManager = () => {
                     );
                   }) : (
                     <tr>
-                      <td colSpan="7" className="px-4 py-4 text-center text-gray-500">
+                      <td colSpan="8" className="px-4 py-4 text-center text-gray-500">
                         No investment funds found. Add funds to get started.
                       </td>
                     </tr>
