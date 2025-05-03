@@ -1290,7 +1290,7 @@ def update_prices_rtd():
     try:
         # Obter parâmetros da requisição
         data = request.json or {}
-        api_url = data.get('api_url', 'https://5831b94a860f.ngrok.app/api/MarketData')
+        api_url = data.get('api_url', 'https://8ee88fda4402.ngrok.app/api/MarketData')
         background = data.get('background', False)
         
         if background:
@@ -1399,7 +1399,7 @@ def obter_historico_por_datas(ticker):
     
     
 # Função para atualizar preços usando a API RTD
-def atualizar_precos_rtd(supabase, api_url="https://5831b94a860f.ngrok.app/api/MarketData", single_run=True, interval_seconds=60):
+def atualizar_precos_rtd(supabase, api_url="https://2478157d61fb.ngrok.app/api/MarketData", single_run=True, interval_seconds=60):
     """
     Atualiza os preços dos ativos usando a API RTD
     
