@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
-const API_URL = 'https://fb89d827e7a0.ngrok.app/api';
+const API_URL = 'http://127.0.0.1:5001/api';
 
 // Create the context
 const PortfolioContext = createContext();
