@@ -7,7 +7,7 @@ const LastUpdateIndicator = () => {
   const [loading, setLoading] = useState(true);
   
   // API URL
-  const API_URL = 'http://127.0.0.1:5001/api';
+  const API_URL = 'http://riskback.blackboxinovacao.com.br/api';
   
   // Função para obter a data da última atualização
   const fetchLastUpdate = async () => {

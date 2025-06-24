@@ -23,4 +23,4 @@ services:
       - backend
     restart: unless-stopped
     environment:
-      - REACT_APP_API_URL=http://127.0.0.1:5001/api
+      - REACT_APP_API_URL=http://riskback.blackboxinovacao.com.br/api
