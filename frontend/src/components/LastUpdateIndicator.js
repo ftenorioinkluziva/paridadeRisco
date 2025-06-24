@@ -1,6 +1,5 @@
 // src/components/LastUpdateIndicator.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 const LastUpdateIndicator = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
@@ -12,10 +11,11 @@ const LastUpdateIndicator = () => {
   // Função para obter a data da última atualização
   const fetchLastUpdate = async () => {
     try {
-      const response = await axios.get(`${API_URL}/last-update`);
-      
-      if (response.data && response.data.last_update) {
-        setLastUpdate(new Date(response.data.last_update));
+      const response = await fetch(`${API_URL}/last-update`);
+      if (!response.ok) throw new Error('Erro ao obter última atualização');
+      const data = await response.json();
+      if (data && data.last_update) {
+        setLastUpdate(new Date(data.last_update));
       }
     } catch (error) {
       console.error('Erro ao obter última atualização:', error);

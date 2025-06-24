@@ -1,6 +1,5 @@
 // src/components/PriceUpdateButton.js
 import React, { useState } from 'react';
-import axios from 'axios';
 
 const PriceUpdateButton = () => {
   const [loading, setLoading] = useState(false);
@@ -11,29 +10,36 @@ const PriceUpdateButton = () => {
   
   const handlePriceUpdate = async () => {
     if (loading) return; // Prevenir cliques múltiplos
-    
+
     setLoading(true);
     setResult({ success: null, message: '' });
-    
+
     try {
-      const response = await axios.post(`${API_URL}/update-prices`);
-      
+      const res = await fetch(`${API_URL}/update-prices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.erro || 'Erro ao iniciar atualização de preços.');
+
       setResult({
         success: true,
-        message: response.data.mensagem || 'Atualização de preços iniciada com sucesso!'
+        message: data.mensagem || 'Atualização de preços iniciada com sucesso!'
       });
-      
-      // Iniciar timer para limpar a mensagem após 5 segundos
+
       setTimeout(() => {
         setResult({ success: null, message: '' });
       }, 5000);
-      
+
     } catch (error) {
       console.error('Erro ao atualizar preços:', error);
-      
+
       setResult({
         success: false,
-        message: error.response?.data?.erro || 'Erro ao iniciar atualização de preços. Tente novamente.'
+        message: error.message || 'Erro ao iniciar atualização de preços. Tente novamente.'
       });
     } finally {
       setLoading(false);
