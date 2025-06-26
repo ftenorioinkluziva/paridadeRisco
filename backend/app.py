@@ -16,7 +16,13 @@ import time
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Habilita CORS para todas as rotas
+CORS(app, origins=[
+    "http://localhost:3000",
+    "http://localhost:3001", 
+    "http://rtd.blackboxinovacao.com.br"
+    "http://apirisky.blackboxinovacao.com.br"
+    "http://riskyparity.blackboxinovacao.com.br"
+], supports_credentials=True)
 
 # Configurações do Supabase
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
