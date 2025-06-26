@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 //import axios from 'axios';
 import { usePortfolio } from '../../contexts/PortfolioContext';
-
-const API_URL = 'http://riskback.blackboxinovacao.com.br/api';
+import { API_URL } from '../../config/api';
 
 const RebalancingTab = ({ showSuccessMessage, showErrorMessage }) => {
   const {

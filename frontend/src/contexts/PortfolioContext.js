@@ -1,8 +1,8 @@
 // src/contexts/PortfolioContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../config/api';
 
-const API_URL = 'http://riskback.blackboxinovacao.com.br/api';
-
+console.log('PortfolioContext - API URL:', API_URL);
 // Create the context
 const PortfolioContext = createContext();
 

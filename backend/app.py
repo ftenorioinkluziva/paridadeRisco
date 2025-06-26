@@ -16,7 +16,54 @@ import time
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Habilita CORS para todas as rotas
+
+# Lista de origens permitidas
+allowed_origins = [
+    # Desenvolvimento local
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:5001/api",
+    
+    # Cloudflare Tunnels
+    "https://riskyparity.blackboxinovacao.com.br",
+    "https://apirisky.blackboxinovacao.com.br",
+    "http://riskyparity.blackboxinovacao.com.br",
+    "http://apirisky.blackboxinovacao.com.br",
+]
+
+# Configurar CORS para permitir chamadas do frontend durante o desenvolvimento
+CORS(
+    app,
+    resources={r"/api/*": {"origins": allowed_origins}},
+    supports_credentials=True,
+)
+
+# Headers CORS adicionais
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    
+    if origin in allowed_origins:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '3600')
+    
+    return response
+
+# Handler para OPTIONS (preflight requests)
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,X-Requested-With")
+        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
 # Configurações do Supabase
 SUPABASE_URL = os.environ.get('SUPABASE_URL')

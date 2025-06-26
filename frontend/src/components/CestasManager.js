@@ -1,5 +1,6 @@
 //Componente de Gerenciamento de Cestas
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 
 
 const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
@@ -16,8 +17,6 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
     ativos: {}
   });
 
-  // API URL
-  const API_URL = 'http://riskback.blackboxinovacao.com.br/api';
 
   // Carregar todas as cestas
   const carregarCestas = async () => {

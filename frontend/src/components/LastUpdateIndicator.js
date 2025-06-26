@@ -1,12 +1,11 @@
 // src/components/LastUpdateIndicator.js
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 
 const LastUpdateIndicator = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // API URL
-  const API_URL = 'http://riskback.blackboxinovacao.com.br/api';
   
   // Função para obter a data da última atualização
   const fetchLastUpdate = async () => {
