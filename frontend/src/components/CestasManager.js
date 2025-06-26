@@ -17,7 +17,17 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
   });
 
   // API URL
-  const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
+ const getApiUrl = () => {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://127.0.0.1:5001/api';
+  }
+  if (window.location.hostname === 'riskyparity.blackboxinovacao.com.br') {
+    return 'https://apirisky.blackboxinovacao.com.br/api';
+  }
+  return 'https://apirisky.blackboxinovacao.com.br/api';
+};
+
+const API_URL = getApiUrl();
 
   // Carregar todas as cestas
   const carregarCestas = async () => {

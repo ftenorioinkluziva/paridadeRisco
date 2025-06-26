@@ -3,7 +3,17 @@ import React, { useState, useEffect } from 'react';
 //import axios from 'axios';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 
-const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
+const getApiUrl = () => {
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://127.0.0.1:5001/api';
+  }
+  if (window.location.hostname === 'riskyparity.blackboxinovacao.com.br') {
+    return 'https://apirisky.blackboxinovacao.com.br/api';
+  }
+  return 'https://apirisky.blackboxinovacao.com.br/api';
+};
+
+const API_URL = getApiUrl();
 
 const RebalancingTab = ({ showSuccessMessage, showErrorMessage }) => {
   const {

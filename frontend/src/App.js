@@ -14,12 +14,11 @@ const getApiUrl = () => {
   
   // Se estiver rodando localmente
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:5001/api';
+    return 'http://127.0.0.1:5001/api';  // Alterado para 127.0.0.1
   }
   
   // Se estiver no Cloudflare Tunnel
   if (hostname === 'riskyparity.blackboxinovacao.com.br') {
-    // Primeiro tenta HTTPS, depois HTTP se necessário
     return 'https://apirisky.blackboxinovacao.com.br/api';
   }
   
@@ -29,6 +28,7 @@ const getApiUrl = () => {
 
 const API_URL = getApiUrl();
 console.log('Using API URL:', API_URL);
+
 
 // Função para fazer chamadas API com fallback
 const apiCall = async (endpoint, options = {}) => {

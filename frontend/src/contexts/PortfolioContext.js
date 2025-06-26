@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 const getApiUrl = () => {
   // Verificar se está rodando localmente
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://localhost:5001/api';
+    return 'http://127.0.0.1:5001/api';  // Alterado para 127.0.0.1
   }
   
   // Verificar se está no Cloudflare Tunnel
@@ -17,6 +17,10 @@ const getApiUrl = () => {
 };
 
 const API_URL = getApiUrl();
+
+// Adicionar log para debug
+console.log('PortfolioContext - API URL:', API_URL);
+
 
 // Adicionar log para debug
 console.log('PortfolioContext - API URL:', API_URL);
