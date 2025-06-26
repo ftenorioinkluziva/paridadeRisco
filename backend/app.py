@@ -44,14 +44,17 @@ CORS(
 @app.after_request
 def after_request(response):
     origin = request.headers.get('Origin')
-    
+
     if origin in allowed_origins:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Max-Age', '3600')
-    
+        # Use `headers.setdefault` to avoid duplicating values that may have been
+        # added by Flask-CORS. This ensures that only a single value is returned
+        # for each CORS related header.
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Max-Age'] = '3600'
+
     return response
 
 # Handler para OPTIONS (preflight requests)
@@ -59,10 +62,11 @@ def after_request(response):
 def handle_preflight():
     if request.method == "OPTIONS":
         response = jsonify({'status': 'OK'})
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,X-Requested-With")
-        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        origin = request.headers.get('Origin', '*')
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = "Content-Type,Authorization,X-Requested-With"
+        response.headers['Access-Control-Allow-Methods'] = "GET,PUT,POST,DELETE,OPTIONS"
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
 
 # Configurações do Supabase
