@@ -39,30 +39,6 @@ CORS(app,
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 )
 
-# Headers CORS adicionais
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin')
-    
-    if origin in allowed_origins:
-        response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Max-Age', '3600')
-    
-    return response
-
-# Handler para OPTIONS (preflight requests)
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        response = jsonify({'status': 'OK'})
-        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
-        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,X-Requested-With")
-        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
 
 # Configurações do Supabase
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
