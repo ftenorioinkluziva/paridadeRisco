@@ -31,12 +31,11 @@ allowed_origins = [
     "http://apirisky.blackboxinovacao.com.br",
 ]
 
-# Configurar CORS
-CORS(app, 
-     origins=allowed_origins,
-     supports_credentials=True,
-     allow_headers=['Content-Type', 'Authorization', 'Access-Control-Allow-Credentials'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+# Configurar CORS para permitir chamadas do frontend durante o desenvolvimento
+CORS(
+    app,
+    resources={r"/api/*": {"origins": allowed_origins}},
+    supports_credentials=True,
 )
 
 # Headers CORS adicionais
