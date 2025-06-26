@@ -1290,7 +1290,7 @@ def update_prices_rtd():
     try:
         # Obter parâmetros da requisição
         data = request.json or {}
-        api_url = data.get('api_url', 'https://rtd.blackboxinovacao.com.br/api/MarketData')
+        api_url = data.get('api_url', 'http://rtd.blackboxinovacao.com.br/api/MarketData')
         background = data.get('background', False)
         
         if background:
@@ -1399,7 +1399,7 @@ def obter_historico_por_datas(ticker):
     
     
 # Função para atualizar preços usando a API RTD
-def atualizar_precos_rtd(supabase, api_url="https://rtd.blackboxinovacao.com.br/api/MarketData", single_run=True, interval_seconds=60):
+def atualizar_precos_rtd(supabase, api_url="http://rtd.blackboxinovacao.com.br/api/MarketData", single_run=True, interval_seconds=60):
     """
     Atualiza os preços dos ativos usando a API RTD
     
