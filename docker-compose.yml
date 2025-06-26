@@ -1,12 +1,9 @@
-version: '3.8'
 
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "5001:5001"
     volumes:
       - ./backend:/app
     environment:
@@ -19,8 +16,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -28,4 +23,4 @@ services:
       - backend
     restart: unless-stopped
     environment:
-      - REACT_APP_API_URL=http://localhost:5001/api
+      - REACT_APP_API_URL=http://riskback.blackboxinovacao.com.br/api

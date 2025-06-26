@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
+// import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CestasManager from './components/CestasManager';
 import CestaComposition from './components/CestaComposition';
@@ -290,8 +290,10 @@ function App() {
   useEffect(() => {
     const verificarStatus = async () => {
       try {
-        const response = await axios.get(`${API_URL}/status`);
-        setApiStatus(response.data);
+        const response = await fetch(`${API_URL}/status`);
+        if (!response.ok) throw new Error('Erro ao conectar à API');
+        const data = await response.json();
+        setApiStatus(data);
       } catch (error) {
         setErro('Não foi possível conectar à API. Verifique se o servidor está rodando.');
       }
@@ -305,14 +307,16 @@ function App() {
     const carregarAtivos = async () => {
       try {
         setCarregando(true);
-        const response = await axios.get(`${API_URL}/ativos`);
-        
-        if (response.data && Array.isArray(response.data)) {
-          setAtivos(response.data);
-          
+        const response = await fetch(`${API_URL}/ativos`);
+        if (!response.ok) throw new Error('Erro ao carregar ativos');
+        const data = await response.json();
+
+        if (data && Array.isArray(data)) {
+          setAtivos(data);
+
           // Se não houver ativos selecionados e temos dados, selecione os dois primeiros
-          if (selecionados.length === 0 && response.data.length > 0) {
-            const iniciais = response.data.slice(0, Math.min(2, response.data.length)).map(a => a.ticker);
+          if (selecionados.length === 0 && data.length > 0) {
+            const iniciais = data.slice(0, Math.min(2, data.length)).map(a => a.ticker);
             setSelecionados(iniciais);
           }
         }
@@ -334,16 +338,16 @@ function App() {
   useEffect(() => {
     const carregarDadosHistoricos = async () => {
       if (selecionados.length === 0) return;
-  
+
       setCarregando(true);
       try {
         const dadosHistoricos = {};
-        
+
         // Process each selected ticker
         for (const ticker of selecionados) {
           let endpoint;
           let response;
-          
+
           if (isCustomDateRange && customStartDate && customEndDate) {
             // Use the custom date range endpoint
             console.log(`Using custom date range for ${ticker}: ${customStartDate} to ${customEndDate}`);
@@ -352,19 +356,24 @@ function App() {
             // Use the existing period-based endpoint
             endpoint = `${API_URL}/historico/${ticker}?dias=${periodoComparativo}`;
           }
-          
-          response = await axios.get(endpoint);
-          
-          if (response.data && Array.isArray(response.data)) {
-            dadosHistoricos[ticker] = response.data;
+
+          response = await fetch(endpoint);
+          if (!response.ok) {
+            console.warn(`No data returned for ${ticker} or unexpected format`);
+            continue;
+          }
+          const data = await response.json();
+
+          if (data && Array.isArray(data)) {
+            dadosHistoricos[ticker] = data;
           } else {
             console.warn(`No data returned for ${ticker} or unexpected format`);
           }
         }
-        
+
         // Process the data as before
         processarDadosHistoricos(dadosHistoricos);
-        
+
         setErro(null);
       } catch (error) {
         console.error('Erro ao carregar dados históricos:', error);
@@ -373,7 +382,7 @@ function App() {
         setCarregando(false);
       }
     };
-  
+
     if (apiStatus && apiStatus.status === 'online') {
       carregarDadosHistoricos();
     }
@@ -402,52 +411,57 @@ function App() {
       setErro("Adicione pelo menos um ativo à cesta");
       return;
     }
-    
+
     // Filtrar ativos com peso > 0
     const pesosFiltrados = {};
     let somaTotal = 0;
-    
+
     Object.entries(cestaAtivos).forEach(([ticker, peso]) => {
       if (peso > 0) {
         pesosFiltrados[ticker] = peso;
         somaTotal += peso;
       }
     });
-    
+
     if (somaTotal === 0) {
       setErro("A soma dos pesos deve ser maior que zero");
       return;
     }
-    
+
     // Normalizar pesos para 100%
     Object.keys(pesosFiltrados).forEach(ticker => {
       pesosFiltrados[ticker] = (pesosFiltrados[ticker] / somaTotal) * 100;
     });
-    
+
     setCestaAtivos(pesosFiltrados);
     setExibirCesta(true);
     setMostrarCestaConfig(false);
-    
+
     // Recalcular cesta
     calcularCesta(dadosProcessados, pesosFiltrados);
-    
+
     // Perguntar ao usuário se deseja salvar a cesta
     const desejaSalvar = window.confirm(
       `Deseja salvar a cesta "${nomeCesta}" para uso futuro?`
     );
-    
+
     if (desejaSalvar) {
       try {
         setCarregando(true);
-        
+
         const cestaDados = {
           nome: nomeCesta,
           descricao: `Cesta criada em ${new Date().toLocaleDateString()}`,
           ativos: pesosFiltrados
         };
-        
-        await axios.post(`${API_URL}/cesta`, cestaDados);
-        
+
+        const response = await fetch(`${API_URL}/cesta`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cestaDados)
+        });
+
+        if (!response.ok) throw new Error('Erro ao salvar cesta');
         setErro(null);
         alert(`Cesta "${nomeCesta}" salva com sucesso!`);
       } catch (error) {

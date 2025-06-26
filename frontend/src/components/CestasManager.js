@@ -1,6 +1,5 @@
 //Componente de Gerenciamento de Cestas
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 
 const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
@@ -24,8 +23,10 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
   const carregarCestas = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/cestas`);
-      setCestas(response.data);
+      const response = await fetch(`${API_URL}/cestas`);
+      if (!response.ok) throw new Error('Erro ao carregar cestas');
+      const data = await response.json();
+      setCestas(data);
       setError(null);
     } catch (err) {
       setError('Erro ao carregar cestas. Verifique a conexão com o servidor.');
@@ -44,21 +45,27 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
   const criarCesta = async () => {
     // Validar se há pelo menos um ativo com peso maior que zero
     const totalPeso = Object.values(novaCesta.ativos).reduce((sum, peso) => sum + (parseFloat(peso) || 0), 0);
-    
+
     if (totalPeso <= 0) {
       setError('Adicione pelo menos um ativo com peso maior que zero');
       return;
     }
-    
+
     if (!novaCesta.nome.trim()) {
       setError('Nome da cesta é obrigatório');
       return;
     }
-    
+
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/cesta`, novaCesta);
-      setCestas([...cestas, response.data]);
+      const response = await fetch(`${API_URL}/cesta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(novaCesta)
+      });
+      if (!response.ok) throw new Error('Erro ao criar cesta');
+      const data = await response.json();
+      setCestas([...cestas, data]);
       setError(null);
       setActiveTab('listar');
       setNovaCesta({ nome: '', descricao: '', ativos: {} });
@@ -73,27 +80,30 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
   // Função para atualizar cesta existente
   const atualizarCesta = async () => {
     if (!cestaEditando) return;
-    
+
     // Validar se há pelo menos um ativo com peso maior que zero
     const totalPeso = Object.values(cestaEditando.ativos).reduce((sum, peso) => sum + (parseFloat(peso) || 0), 0);
-    
+
     if (totalPeso <= 0) {
       setError('Adicione pelo menos um ativo com peso maior que zero');
       return;
     }
-    
+
     if (!cestaEditando.nome.trim()) {
       setError('Nome da cesta é obrigatório');
       return;
     }
-    
+
     setLoading(true);
     try {
-      const response = await axios.put(`${API_URL}/cesta/${cestaEditando.id}`, cestaEditando);
-      
-      // Atualizar a lista de cestas
-      setCestas(cestas.map(c => c.id === cestaEditando.id ? response.data : c));
-      
+      const response = await fetch(`${API_URL}/cesta/${cestaEditando.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cestaEditando)
+      });
+      if (!response.ok) throw new Error('Erro ao atualizar cesta');
+      const data = await response.json();
+      setCestas(cestas.map(c => c.id === cestaEditando.id ? data : c));
       setError(null);
       setActiveTab('listar');
       setCestaEditando(null);
@@ -108,14 +118,14 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
   // Função para excluir cesta
   const excluirCesta = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir esta cesta?')) return;
-    
+
     setLoading(true);
     try {
-      await axios.delete(`${API_URL}/cesta/${id}`);
-      
-      // Atualizar a lista de cestas
+      const response = await fetch(`${API_URL}/cesta/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Erro ao excluir cesta');
       setCestas(cestas.filter(c => c.id !== id));
-      
       setError(null);
     } catch (err) {
       setError('Erro ao excluir cesta. Verifique a conexão com o servidor.');

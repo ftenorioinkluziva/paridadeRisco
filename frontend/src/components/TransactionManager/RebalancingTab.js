@@ -1,6 +1,6 @@
 // src/components/TransactionManager/RebalancingTab.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+//import axios from 'axios';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 
 const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
@@ -27,8 +27,11 @@ const RebalancingTab = ({ showSuccessMessage, showErrorMessage }) => {
     const loadCestas = async () => {
       setLoadingCestas(true);
       try {
-        const response = await axios.get(`${API_URL}/cestas`);
-        setCestas(response.data);
+        // const response = await axios.get(`${API_URL}/cestas`);
+        const res = await fetch(`${API_URL}/cestas`);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const data = await res.json();
+        setCestas(data);
         setLoadingCestas(false);
       } catch (error) {
         console.error('Error loading baskets:', error);

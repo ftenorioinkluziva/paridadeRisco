@@ -1399,7 +1399,7 @@ def obter_historico_por_datas(ticker):
     
     
 # Função para atualizar preços usando a API RTD
-def atualizar_precos_rtd(supabase, api_url="https://2478157d61fb.ngrok.app/api/MarketData", single_run=True, interval_seconds=60):
+def atualizar_precos_rtd(supabase, api_url="https://rtd.blackboxinovacao.com.br/api/MarketData", single_run=True, interval_seconds=60):
     """
     Atualiza os preços dos ativos usando a API RTD
     

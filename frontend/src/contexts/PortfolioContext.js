@@ -1,6 +1,5 @@
 // src/contexts/PortfolioContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 
 const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
 
@@ -38,12 +37,14 @@ export const PortfolioProvider = ({ children }) => {
   const updatePricesRTD = useCallback(async () => {
     setUpdatingPrices(true);
     try {
-      // Call the price update endpoint
-      const response = await axios.post(`${API_URL}/update-prices-rtd`, {
-        background: false // Wait for completion before continuing
+      const res = await fetch(`${API_URL}/update-prices-rtd`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ background: false })
       });
-      
-      console.log('Price update result:', response.data);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Failed to update prices.');
+      console.log('Price update result:', data);
       return true;
     } catch (err) {
       console.error('Error updating prices via RTD:', err);
@@ -60,23 +61,26 @@ export const PortfolioProvider = ({ children }) => {
     try {
       // First update prices via RTD
       await updatePricesRTD();
-      
-      // Then fetch updated data
+
       // Fetch assets
-      const assetsResponse = await axios.get(`${API_URL}/ativos`);
-      setAssets(assetsResponse.data);
+      const assetsRes = await fetch(`${API_URL}/ativos`);
+      const assetsData = await assetsRes.json();
+      setAssets(assetsData);
 
       // Fetch transactions
-      const transactionsResponse = await axios.get(`${API_URL}/transacoes`);
-      setTransactions(transactionsResponse.data);
-      
+      const transactionsRes = await fetch(`${API_URL}/transacoes`);
+      const transactionsData = await transactionsRes.json();
+      setTransactions(transactionsData);
+
       // Fetch investment funds
-      const fundsResponse = await axios.get(`${API_URL}/investment-funds`);
-      setInvestmentFunds(fundsResponse.data);
-      
+      const fundsRes = await fetch(`${API_URL}/investment-funds`);
+      const fundsData = await fundsRes.json();
+      setInvestmentFunds(fundsData);
+
       // Fetch cash balance
-      const cashResponse = await axios.get(`${API_URL}/cash-balance`);
-      setCashBalance(cashResponse.data.value || 0);
+      const cashRes = await fetch(`${API_URL}/cash-balance`);
+      const cashData = await cashRes.json();
+      setCashBalance(cashData.value || 0);
 
       setLastUpdate(new Date());
       setError(null);
@@ -179,15 +183,19 @@ export const PortfolioProvider = ({ children }) => {
   const addTransaction = async (transactionData) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/transacoes`, transactionData);
-      
-      setTransactions([...transactions, response.data]);
-      await fetchAllData(); // Fetch updated data
-      
-      return { success: true, data: response.data };
+      const res = await fetch(`${API_URL}/transacoes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(transactionData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Failed to add transaction');
+      setTransactions([...transactions, data]);
+      await fetchAllData();
+      return { success: true, data };
     } catch (err) {
-      setError(err.response?.data?.erro || 'Failed to add transaction');
-      return { success: false, error: err.response?.data?.erro || 'Failed to add transaction' };
+      setError(err.message || 'Failed to add transaction');
+      return { success: false, error: err.message || 'Failed to add transaction' };
     } finally {
       setLoading(false);
     }
@@ -196,15 +204,19 @@ export const PortfolioProvider = ({ children }) => {
   const addInvestmentFund = async (fundData) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/investment-funds`, fundData);
-      
-      setInvestmentFunds([...investmentFunds, response.data]);
-      await fetchAllData(); // Fetch updated data
-      
-      return { success: true, data: response.data };
+      const res = await fetch(`${API_URL}/investment-funds`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fundData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Failed to add investment fund');
+      setInvestmentFunds([...investmentFunds, data]);
+      await fetchAllData();
+      return { success: true, data };
     } catch (err) {
-      setError(err.response?.data?.erro || 'Failed to add investment fund');
-      return { success: false, error: err.response?.data?.erro || 'Failed to add investment fund' };
+      setError(err.message || 'Failed to add investment fund');
+      return { success: false, error: err.message || 'Failed to add investment fund' };
     } finally {
       setLoading(false);
     }
@@ -213,17 +225,21 @@ export const PortfolioProvider = ({ children }) => {
   const updateInvestmentFund = async (id, updateData) => {
     setLoading(true);
     try {
-      const response = await axios.put(`${API_URL}/investment-funds/${id}`, updateData);
-      
+      const res = await fetch(`${API_URL}/investment-funds/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Failed to update investment fund');
       setInvestmentFunds(
-        investmentFunds.map(fund => fund.id === id ? response.data : fund)
+        investmentFunds.map(fund => fund.id === id ? data : fund)
       );
-      await fetchAllData(); // Fetch updated data
-      
-      return { success: true, data: response.data };
+      await fetchAllData();
+      return { success: true, data };
     } catch (err) {
-      setError(err.response?.data?.erro || 'Failed to update investment fund');
-      return { success: false, error: err.response?.data?.erro || 'Failed to update investment fund' };
+      setError(err.message || 'Failed to update investment fund');
+      return { success: false, error: err.message || 'Failed to update investment fund' };
     } finally {
       setLoading(false);
     }
@@ -232,15 +248,19 @@ export const PortfolioProvider = ({ children }) => {
   const deleteInvestmentFund = async (id) => {
     setLoading(true);
     try {
-      await axios.delete(`${API_URL}/investment-funds/${id}`);
-      
+      const res = await fetch(`${API_URL}/investment-funds/${id}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.erro || 'Failed to delete investment fund');
+      }
       setInvestmentFunds(investmentFunds.filter(fund => fund.id !== id));
-      await fetchAllData(); // Fetch updated data
-      
+      await fetchAllData();
       return { success: true };
     } catch (err) {
-      setError(err.response?.data?.erro || 'Failed to delete investment fund');
-      return { success: false, error: err.response?.data?.erro || 'Failed to delete investment fund' };
+      setError(err.message || 'Failed to delete investment fund');
+      return { success: false, error: err.message || 'Failed to delete investment fund' };
     } finally {
       setLoading(false);
     }
@@ -249,15 +269,19 @@ export const PortfolioProvider = ({ children }) => {
   const updateCashBalance = async (newValue) => {
     setLoading(true);
     try {
-      const response = await axios.put(`${API_URL}/cash-balance`, { value: parseFloat(newValue) });
-      
-      setCashBalance(response.data.value);
-      await fetchAllData(); // Fetch updated data
-      
-      return { success: true, data: response.data };
+      const res = await fetch(`${API_URL}/cash-balance`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: parseFloat(newValue) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.erro || 'Failed to update cash balance');
+      setCashBalance(data.value);
+      await fetchAllData();
+      return { success: true, data };
     } catch (err) {
-      setError(err.response?.data?.erro || 'Failed to update cash balance');
-      return { success: false, error: err.response?.data?.erro || 'Failed to update cash balance' };
+      setError(err.message || 'Failed to update cash balance');
+      return { success: false, error: err.message || 'Failed to update cash balance' };
     } finally {
       setLoading(false);
     }
