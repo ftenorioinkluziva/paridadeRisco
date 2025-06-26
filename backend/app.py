@@ -16,13 +16,53 @@ import time
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=[
+
+# Lista de origens permitidas
+allowed_origins = [
+    # Desenvolvimento local
     "http://localhost:3000",
-    "http://localhost:3001", 
-    "http://rtd.blackboxinovacao.com.br"
-    "http://apirisky.blackboxinovacao.com.br"
-    "http://riskyparity.blackboxinovacao.com.br"
-], supports_credentials=True)
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    
+    # Cloudflare Tunnels
+    "https://riskyparity.blackboxinovacao.com.br",
+    "https://apirisky.blackboxinovacao.com.br",
+    "http://riskyparity.blackboxinovacao.com.br",
+    "http://apirisky.blackboxinovacao.com.br",
+]
+
+# Configurar CORS
+CORS(app, 
+     origins=allowed_origins,
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization', 'Access-Control-Allow-Credentials'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+)
+
+# Headers CORS adicionais
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    
+    if origin in allowed_origins:
+        response.headers.add('Access-Control-Allow-Origin', origin)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '3600')
+    
+    return response
+
+# Handler para OPTIONS (preflight requests)
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({'status': 'OK'})
+        response.headers.add("Access-Control-Allow-Origin", request.headers.get('Origin', '*'))
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,X-Requested-With")
+        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
 # Configurações do Supabase
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
