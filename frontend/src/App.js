@@ -8,7 +8,7 @@ import CustomDateRange from './components/CustomDateRange';
 import DateRangeDisplay from './components/DateRangeDisplay';
 
 // Configuração da URL base da API
-const API_URL = 'http://127.0.0.1:5001/api';
+const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
 
 function App() {
   // Estados para armazenar dados

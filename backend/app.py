@@ -1290,7 +1290,7 @@ def update_prices_rtd():
     try:
         # Obter parâmetros da requisição
         data = request.json or {}
-        api_url = data.get('api_url', 'https://8ee88fda4402.ngrok.app/api/MarketData')
+        api_url = data.get('api_url', 'http://rtd.blackboxinovacao.com.br/api/MarketData')
         background = data.get('background', False)
         
         if background:

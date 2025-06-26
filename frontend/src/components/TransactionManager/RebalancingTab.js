@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 
-const API_URL = 'http://127.0.0.1:5001/api';
+const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
 
 const RebalancingTab = ({ showSuccessMessage, showErrorMessage }) => {
   const {
