@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-// import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import CestasManager from './components/CestasManager';
 import CestaComposition from './components/CestaComposition';
@@ -7,8 +6,62 @@ import TransactionManager from './components/TransactionManager/index';
 import CustomDateRange from './components/CustomDateRange';
 import DateRangeDisplay from './components/DateRangeDisplay';
 
-// Configuração da URL base da API
-import { API_URL } from './config/api';
+// Configuração de API inteligente
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  
+  console.log('Current hostname:', hostname);
+  
+  // Se estiver rodando localmente
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:5001/api';
+  }
+  
+  // Se estiver no Cloudflare Tunnel
+  if (hostname === 'riskyparity.blackboxinovacao.com.br') {
+    // Primeiro tenta HTTPS, depois HTTP se necessário
+    return 'https://apirisky.blackboxinovacao.com.br/api';
+  }
+  
+  // Fallback
+  return 'https://apirisky.blackboxinovacao.com.br/api';
+};
+
+const API_URL = getApiUrl();
+console.log('Using API URL:', API_URL);
+
+// Função para fazer chamadas API com fallback
+const apiCall = async (endpoint, options = {}) => {
+  const urls = [
+    `${API_URL}${endpoint}`,
+    // Fallback para HTTP se HTTPS falhar
+    API_URL.includes('https://') ? `${API_URL.replace('https://', 'http://')}${endpoint}` : null
+  ].filter(Boolean);
+  
+  for (const url of urls) {
+    try {
+      console.log(`Tentando: ${url}`);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers
+        }
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Sucesso: ${url}`);
+        return await response.json();
+      } else {
+        console.warn(`❌ Falhou (${response.status}): ${url}`);
+      }
+    } catch (error) {
+      console.warn(`❌ Erro de rede: ${url}`, error.message);
+    }
+  }
+  
+  throw new Error('Não foi possível conectar com a API');
+};
 
 function App() {
   // Estados para armazenar dados
@@ -38,6 +91,69 @@ function App() {
 
   // Referência para o formulário de pesos da cesta
   const cestaFormRef = useRef(null);
+
+  // Função para testar a conexão com a API
+  const testarConexaoAPI = async () => {
+    try {
+      console.log('🔍 Testando conexão com API...');
+      const data = await apiCall('/status');
+      console.log('✅ API Status:', data);
+      setApiStatus(data);
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao conectar com API:', error);
+      setErro(`Não foi possível conectar à API. Tentativas feitas em: ${API_URL}`);
+      return false;
+    }
+  };
+
+  // Verificar status da API quando o componente carrega
+  useEffect(() => {
+    const verificarStatus = async () => {
+      const conectado = await testarConexaoAPI();
+      if (!conectado) {
+        // Tentar novamente após 5 segundos
+        setTimeout(() => {
+          testarConexaoAPI();
+        }, 5000);
+      }
+    };
+
+    verificarStatus();
+  }, []);
+
+  // Carregar lista de ativos disponíveis
+  useEffect(() => {
+    const carregarAtivos = async () => {
+      if (!apiStatus || apiStatus.status !== 'online') {
+        return;
+      }
+
+      try {
+        setCarregando(true);
+        const data = await apiCall('/ativos');
+
+        if (data && Array.isArray(data)) {
+          setAtivos(data);
+          console.log('✅ Ativos carregados:', data.length);
+
+          // Se não houver ativos selecionados e temos dados, selecione os dois primeiros
+          if (selecionados.length === 0 && data.length > 0) {
+            const iniciais = data.slice(0, Math.min(2, data.length)).map(a => a.ticker);
+            setSelecionados(iniciais);
+          }
+        }
+        setErro(null);
+      } catch (error) {
+        console.error('Erro ao carregar ativos:', error);
+        setErro('Erro ao carregar a lista de ativos. Verifique a conexão com o servidor.');
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarAtivos();
+  }, [apiStatus, selecionados.length]);
 
   // Adicione esta função para calcular os dados da cesta ponderada
   const calcularCesta = useCallback((dadosProcessados, pesos) => {
@@ -284,60 +400,12 @@ function App() {
     setIsCustomDateRange(false);
     setCustomStartDate(null);
     setCustomEndDate(null);
-  };  
-
-  // Verificar status da API quando o componente carrega
-  useEffect(() => {
-    const verificarStatus = async () => {
-      try {
-        const response = await fetch(`${API_URL}/status`);
-        if (!response.ok) throw new Error('Erro ao conectar à API');
-        const data = await response.json();
-        setApiStatus(data);
-      } catch (error) {
-        setErro('Não foi possível conectar à API. Verifique se o servidor está rodando.');
-      }
-    };
-
-    verificarStatus();
-  }, []);
-
-  // Carregar lista de ativos disponíveis
-  useEffect(() => {
-    const carregarAtivos = async () => {
-      try {
-        setCarregando(true);
-        const response = await fetch(`${API_URL}/ativos`);
-        if (!response.ok) throw new Error('Erro ao carregar ativos');
-        const data = await response.json();
-
-        if (data && Array.isArray(data)) {
-          setAtivos(data);
-
-          // Se não houver ativos selecionados e temos dados, selecione os dois primeiros
-          if (selecionados.length === 0 && data.length > 0) {
-            const iniciais = data.slice(0, Math.min(2, data.length)).map(a => a.ticker);
-            setSelecionados(iniciais);
-          }
-        }
-        setErro(null);
-      } catch (error) {
-        console.error('Erro ao carregar ativos:', error);
-        setErro('Erro ao carregar a lista de ativos. Verifique a conexão com o servidor.');
-      } finally {
-        setCarregando(false);
-      }
-    };
-
-    if (apiStatus && apiStatus.status === 'online') {
-      carregarAtivos();
-    }
-  }, [apiStatus, selecionados.length]);
+  };
 
   // Carregar dados históricos para cada ativo selecionado
   useEffect(() => {
     const carregarDadosHistoricos = async () => {
-      if (selecionados.length === 0) return;
+      if (selecionados.length === 0 || !apiStatus || apiStatus.status !== 'online') return;
 
       setCarregando(true);
       try {
@@ -346,32 +414,29 @@ function App() {
         // Process each selected ticker
         for (const ticker of selecionados) {
           let endpoint;
-          let response;
 
           if (isCustomDateRange && customStartDate && customEndDate) {
             // Use the custom date range endpoint
             console.log(`Using custom date range for ${ticker}: ${customStartDate} to ${customEndDate}`);
-            endpoint = `${API_URL}/historico-range/${ticker}?dataInicio=${customStartDate}&dataFim=${customEndDate}`;
+            endpoint = `/historico-range/${ticker}?dataInicio=${customStartDate}&dataFim=${customEndDate}`;
           } else {
             // Use the existing period-based endpoint
-            endpoint = `${API_URL}/historico/${ticker}?dias=${periodoComparativo}`;
+            endpoint = `/historico/${ticker}?dias=${periodoComparativo}`;
           }
 
-          response = await fetch(endpoint);
-          if (!response.ok) {
-            console.warn(`No data returned for ${ticker} or unexpected format`);
-            continue;
-          }
-          const data = await response.json();
-
-          if (data && Array.isArray(data)) {
-            dadosHistoricos[ticker] = data;
-          } else {
-            console.warn(`No data returned for ${ticker} or unexpected format`);
+          try {
+            const data = await apiCall(endpoint);
+            if (data && Array.isArray(data)) {
+              dadosHistoricos[ticker] = data;
+            } else {
+              console.warn(`No data returned for ${ticker} or unexpected format`);
+            }
+          } catch (error) {
+            console.warn(`Error loading data for ${ticker}:`, error);
           }
         }
 
-        // Process the data as before
+        // Process the data
         processarDadosHistoricos(dadosHistoricos);
 
         setErro(null);
@@ -383,9 +448,7 @@ function App() {
       }
     };
 
-    if (apiStatus && apiStatus.status === 'online') {
-      carregarDadosHistoricos();
-    }
+    carregarDadosHistoricos();
   }, [selecionados, periodoComparativo, customStartDate, customEndDate, isCustomDateRange, apiStatus, processarDadosHistoricos]);
   
   // Manipular seleção/desseleção de ativos
@@ -455,13 +518,11 @@ function App() {
           ativos: pesosFiltrados
         };
 
-        const response = await fetch(`${API_URL}/cesta`, {
+        await apiCall('/cesta', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cestaDados)
         });
 
-        if (!response.ok) throw new Error('Erro ao salvar cesta');
         setErro(null);
         alert(`Cesta "${nomeCesta}" salva com sucesso!`);
       } catch (error) {
@@ -472,7 +533,6 @@ function App() {
       }
     }
   };
-
 
   // Preparar dados para o gráfico
   const prepararDadosGrafico = useCallback(() => {
@@ -548,19 +608,23 @@ function App() {
               Análise comparativa de investimentos
             </p>
           </div>
-{/*           <div className="flex flex-col items-end">
-            <PriceUpdateButton />
-            <div className="mt-2">
-              <LastUpdateIndicator />
-            </div>
-          </div> */}
+          <div className="text-right text-sm">
+            <div>API: {API_URL}</div>
+            <div>Status: {apiStatus ? '🟢 Online' : '🔴 Offline'}</div>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto p-4">
         {erro && (
           <div className="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            {erro}
+            <strong>Erro de Conectividade:</strong> {erro}
+            <button 
+              onClick={() => window.location.reload()} 
+              className="ml-4 bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+            >
+              Tentar Novamente
+            </button>
           </div>
         )}
         
