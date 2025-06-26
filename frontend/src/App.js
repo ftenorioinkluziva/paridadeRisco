@@ -6,28 +6,9 @@ import TransactionManager from './components/TransactionManager/index';
 import CustomDateRange from './components/CustomDateRange';
 import DateRangeDisplay from './components/DateRangeDisplay';
 
-// Configuração de API inteligente
-const getApiUrl = () => {
-  const hostname = window.location.hostname;
-  
-  console.log('Current hostname:', hostname);
-  
-  // Se estiver rodando localmente
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://127.0.0.1:5001/api';  // Alterado para 127.0.0.1
-  }
-  
-  // Se estiver no Cloudflare Tunnel
-  if (hostname === 'riskyparity.blackboxinovacao.com.br') {
-    return 'https://apirisky.blackboxinovacao.com.br/api';
-  }
-  
-  // Fallback
-  return 'https://apirisky.blackboxinovacao.com.br/api';
-};
+import { API_URL } from "./config/api";
 
-const API_URL = getApiUrl();
-console.log('Using API URL:', API_URL);
+console.log("Using API URL:", API_URL);
 
 
 // Função para fazer chamadas API com fallback

@@ -1,28 +1,7 @@
 // src/contexts/PortfolioContext.js
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { API_URL } from '../config/api';
 
-const getApiUrl = () => {
-  // Verificar se está rodando localmente
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://127.0.0.1:5001/api';  // Alterado para 127.0.0.1
-  }
-  
-  // Verificar se está no Cloudflare Tunnel
-  if (window.location.hostname === 'riskyparity.blackboxinovacao.com.br') {
-    return 'https://apirisky.blackboxinovacao.com.br/api';
-  }
-  
-  // Fallback
-  return 'https://apirisky.blackboxinovacao.com.br/api';
-};
-
-const API_URL = getApiUrl();
-
-// Adicionar log para debug
-console.log('PortfolioContext - API URL:', API_URL);
-
-
-// Adicionar log para debug
 console.log('PortfolioContext - API URL:', API_URL);
 // Create the context
 const PortfolioContext = createContext();

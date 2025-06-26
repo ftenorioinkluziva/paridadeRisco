@@ -1,5 +1,6 @@
 //Componente de Gerenciamento de Cestas
 import React, { useState, useEffect } from 'react';
+import { API_URL } from '../config/api';
 
 
 const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
@@ -16,18 +17,6 @@ const CestasManager = ({ ativos, selecionados, onCestaSelect, onClose }) => {
     ativos: {}
   });
 
-  // API URL
- const getApiUrl = () => {
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    return 'http://127.0.0.1:5001/api';
-  }
-  if (window.location.hostname === 'riskyparity.blackboxinovacao.com.br') {
-    return 'https://apirisky.blackboxinovacao.com.br/api';
-  }
-  return 'https://apirisky.blackboxinovacao.com.br/api';
-};
-
-const API_URL = getApiUrl();
 
   // Carregar todas as cestas
   const carregarCestas = async () => {

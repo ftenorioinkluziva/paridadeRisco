@@ -1,12 +1,11 @@
 // src/components/PriceUpdateButton.js
 import React, { useState } from 'react';
+import { API_URL } from '../config/api';
 
 const PriceUpdateButton = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState({ success: null, message: '' });
   
-  // API URL
-  const API_URL = 'http://apirisky.blackboxinovacao.com.br/api';
   
   const handlePriceUpdate = async () => {
     if (loading) return; // Prevenir cliques múltiplos

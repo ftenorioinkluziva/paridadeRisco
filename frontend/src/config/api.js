@@ -1,24 +1,26 @@
 const API_CONFIG = {
   development: {
-    baseURL: 'http://127.0.0.1:5001/api'
+    baseURL: 'http://127.0.0.1:5001/api',
   },
   production: {
-    baseURL: 'https://apirisky.blackboxinovacao.com.br/api'
-  }
+    baseURL: 'https://apirisky.blackboxinovacao.com.br/api',
+  },
 };
 
-// Detectar ambiente automaticamente
-const getEnvironment = () => {
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+export const getEnvironment = () => {
+  if (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  ) {
     return 'development';
   }
   return 'production';
 };
 
-const currentEnv = getEnvironment();
-export const API_URL = API_CONFIG[currentEnv].baseURL;
+export const getApiUrl = () => API_CONFIG[getEnvironment()].baseURL;
 
-console.log(`Environment: ${currentEnv}, API URL: ${API_URL}`);
+export const API_URL = getApiUrl();
 
-// Também exportar para uso em outros arquivos
+console.log(`Environment: ${getEnvironment()}, API URL: ${API_URL}`);
+
 export default API_CONFIG;
