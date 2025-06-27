@@ -22,11 +22,9 @@ SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
 
 # Verificar se as variáveis de ambiente estão definidas
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("\n⚠️ AVISO: Variáveis de ambiente SUPABASE_URL e/ou SUPABASE_KEY não definidas.")
-    print("Verifique se o arquivo .env existe e está configurado corretamente.\n")
-    # Fallback para valores hardcoded (apenas para desenvolvimento)
-    SUPABASE_URL = 'https://dxwebxduuazebqtkumtv.supabase.co'
-    SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR4d2VieGR1dWF6ZWJxdGt1bXR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE1OTMxMzcsImV4cCI6MjA1NzE2OTEzN30.v53W6iz_BJup66qst03jWqjHzJ0DGKmUC6WrVGLpt-Y'
+    raise RuntimeError(
+        "Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY precisam estar definidas"
+    )
 
 # Inicializa o cliente do Supabase
 try:
