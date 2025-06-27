@@ -1,0 +1,25 @@
+# Global ignores
+# Environment variables
+.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.env/
+venv/
+.venv/
+
+# Node artifacts
+node_modules/
+
+# Build outputs
+build/
+dist/
+
+# Logs
+*.log
+
+# OS-generated files
+.DS_Store
