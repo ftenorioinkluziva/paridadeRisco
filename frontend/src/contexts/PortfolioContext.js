@@ -1,5 +1,5 @@
 // src/contexts/PortfolioContext.js
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { API_URL } from '../config/api';
 
 console.log('PortfolioContext - API URL:', API_URL);
@@ -32,6 +32,7 @@ export const PortfolioProvider = ({ children }) => {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [updatingPrices, setUpdatingPrices] = useState(false);
+  const lastFetchRef = useRef(0);
 
   // Function to update prices via RTD
   const updatePricesRTD = useCallback(async () => {
@@ -56,7 +57,12 @@ export const PortfolioProvider = ({ children }) => {
   }, []);
 
   // Function to fetch all data
-  const fetchAllData = useCallback(async () => {
+  const fetchAllData = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && lastFetchRef.current && now - lastFetchRef.current < 60000) {
+      return;
+    }
+    lastFetchRef.current = now;
     setIsRefreshing(true);
     try {
       // First update prices via RTD
@@ -194,7 +200,7 @@ export const PortfolioProvider = ({ children }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Failed to add transaction');
       setTransactions([...transactions, data]);
-      await fetchAllData();
+      await fetchAllData(true);
       return { success: true, data };
     } catch (err) {
       setError(err.message || 'Failed to add transaction');
@@ -215,7 +221,7 @@ export const PortfolioProvider = ({ children }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Failed to add investment fund');
       setInvestmentFunds([...investmentFunds, data]);
-      await fetchAllData();
+      await fetchAllData(true);
       return { success: true, data };
     } catch (err) {
       setError(err.message || 'Failed to add investment fund');
@@ -238,7 +244,7 @@ export const PortfolioProvider = ({ children }) => {
       setInvestmentFunds(
         investmentFunds.map(fund => fund.id === id ? data : fund)
       );
-      await fetchAllData();
+      await fetchAllData(true);
       return { success: true, data };
     } catch (err) {
       setError(err.message || 'Failed to update investment fund');
@@ -259,7 +265,7 @@ export const PortfolioProvider = ({ children }) => {
         throw new Error(data.erro || 'Failed to delete investment fund');
       }
       setInvestmentFunds(investmentFunds.filter(fund => fund.id !== id));
-      await fetchAllData();
+      await fetchAllData(true);
       return { success: true };
     } catch (err) {
       setError(err.message || 'Failed to delete investment fund');
@@ -280,7 +286,7 @@ export const PortfolioProvider = ({ children }) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.erro || 'Failed to update cash balance');
       setCashBalance(data.value);
-      await fetchAllData();
+      await fetchAllData(true);
       return { success: true, data };
     } catch (err) {
       setError(err.message || 'Failed to update cash balance');
@@ -294,8 +300,8 @@ export const PortfolioProvider = ({ children }) => {
   useEffect(() => {
     fetchAllData();
     
-    // Set up polling for automatic updates (every 30 seconds)
-    const intervalId = setInterval(fetchAllData, 30000);
+    // Set up polling for automatic updates (every minute)
+    const intervalId = setInterval(fetchAllData, 60000);
     
     return () => clearInterval(intervalId);
   }, [fetchAllData]);
