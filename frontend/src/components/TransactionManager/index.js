@@ -17,7 +17,7 @@ const TransactionManager = () => {
     setSuccess,
     loading,
     updatingPrices,
-    updatePricesRTD
+    //updatePricesRTD
   } = usePortfolio();
   
   const [activeTab, setActiveTab] = useState('portfolio');
@@ -45,7 +45,7 @@ const TransactionManager = () => {
               Last updated: {lastUpdate.toLocaleTimeString()}
             </span>
           )}
-          <button 
+{/*           <button 
             onClick={updatePricesRTD}
             disabled={updatingPrices || isRefreshing}
             className={`px-3 py-1 rounded text-sm transition-colors ${
@@ -66,7 +66,7 @@ const TransactionManager = () => {
             }`}
           >
             {isRefreshing ? 'Refreshing...' : 'Refresh All Data'}
-          </button>
+          </button> */}
         </div>
       </div>
 

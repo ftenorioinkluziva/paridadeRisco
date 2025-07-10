@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { API_URL } from '../config/api';
 
-const PriceUpdateButton = () => {
+  const PriceUpdateButton = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState({ success: null, message: '' });
   
@@ -43,7 +43,7 @@ const PriceUpdateButton = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }; 
   
   return (
     <div className="inline-block relative">
@@ -85,6 +85,6 @@ const PriceUpdateButton = () => {
       )}
     </div>
   );
-};
+}; 
 
 export default PriceUpdateButton;

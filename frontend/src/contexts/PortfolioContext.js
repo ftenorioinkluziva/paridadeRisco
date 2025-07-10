@@ -60,7 +60,7 @@ export const PortfolioProvider = ({ children }) => {
     setIsRefreshing(true);
     try {
       // First update prices via RTD
-      await updatePricesRTD();
+     // await updatePricesRTD();
 
       // Fetch assets
       const assetsRes = await fetch(`${API_URL}/ativos`);
@@ -90,7 +90,9 @@ export const PortfolioProvider = ({ children }) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [updatePricesRTD]);
+  },
+  // [updatePricesRTD]
+  );
 
   // Calculate portfolio based on transactions
   const calculatePortfolio = useCallback(() => {
@@ -333,7 +335,7 @@ export const PortfolioProvider = ({ children }) => {
     
     // Actions
     fetchAllData,
-    updatePricesRTD,
+    //updatePricesRTD,
     addTransaction,
     addInvestmentFund,
     updateInvestmentFund,

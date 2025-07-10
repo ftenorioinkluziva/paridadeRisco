@@ -270,7 +270,7 @@ const TransactionManager = () => {
             </span>
           )}
           <button 
-            onClick={updatePricesRTD}
+           // onClick={updatePricesRTD}
             disabled={updatingPrices || isRefreshing}
             className={`px-3 py-1 rounded text-sm transition-colors ${
               updatingPrices || isRefreshing
