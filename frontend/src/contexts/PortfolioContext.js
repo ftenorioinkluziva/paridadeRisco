@@ -75,7 +75,8 @@ export const PortfolioProvider = ({ children }) => {
       // Fetch investment funds
       const fundsRes = await fetch(`${API_URL}/investment-funds`);
       const fundsData = await fundsRes.json();
-      setInvestmentFunds(fundsData);
+      // Ensure we always store an array
+      setInvestmentFunds(Array.isArray(fundsData) ? fundsData : []);
 
       // Fetch cash balance
       const cashRes = await fetch(`${API_URL}/cash-balance`);
