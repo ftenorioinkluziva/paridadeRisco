@@ -1,6 +1,6 @@
 const API_CONFIG = {
   development: {
-    baseURL: 'http://127.0.0.1:5001/api',
+    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5002/api',
   },
   production: {
     baseURL: 'https://apirisky.blackboxinovacao.com.br/api',

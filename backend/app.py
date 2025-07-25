@@ -22,9 +22,12 @@ allowed_origins = [
     # Desenvolvimento local
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:8080",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    "http://127.0.0.1:5001/api",
+    "http://127.0.0.1:8080",
+    "http://127.0.0.1:5002/api",
+    "http://localhost:5002/api",
     
     # Cloudflare Tunnels
     "https://riskyparity.blackboxinovacao.com.br",
@@ -84,9 +87,9 @@ supabase = None
 if SUPABASE_URL and SUPABASE_KEY:
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("✓ Conexão com Supabase estabelecida com sucesso.")
+        print("Conexao com Supabase estabelecida com sucesso.")
     except Exception as e:
-        print(f"⚠️ Erro ao conectar com o Supabase: {str(e)}")
+        print(f"Erro ao conectar com o Supabase: {str(e)}")
         print("Verifique se a URL e a chave estão corretas.")
 
 # =========================
@@ -1578,11 +1581,11 @@ def atualizar_precos_rtd(supabase, api_url="http://rtd.blackboxinovacao.com.br/a
     return stats    
 
 if __name__ == '__main__':
-    print("\n🚀 Iniciando servidor de API...\n")
+    print("\nIniciando servidor de API...\n")
     
     # Verificar conexão com o Supabase
     if not supabase:
-        print("⚠️ API iniciada sem conexão com o Supabase. Endpoints relacionados a dados não funcionarão.")
+        print("API iniciada sem conexao com o Supabase. Endpoints relacionados a dados nao funcionarao.")
         print("Defina as variáveis de ambiente SUPABASE_URL e SUPABASE_KEY ou configure-as no código.\n")
     
     # Instruções de uso
@@ -1602,4 +1605,4 @@ if __name__ == '__main__':
     print("- GET /api/calculo/resumo/<ticker>?periodo=5 - Resumo completo de um ativo")
     print("- GET /api/calculo/resumo-varios?tickers=ticker1,ticker2&periodo=5 - Resumo de múltiplos ativos\n")
     
-    app.run(debug=True, port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5001)
