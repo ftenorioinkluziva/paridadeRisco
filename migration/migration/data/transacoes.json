@@ -1,0 +1,432 @@
+[
+  {
+    "id": 1,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 20,
+    "price": 10.26,
+    "date": "2022-11-18",
+    "totalvalue": 205.2,
+    "created_at": "2025-04-03T17:47:56.61261+00:00"
+  },
+  {
+    "id": 2,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 9,
+    "price": 95.26,
+    "date": "2022-11-18",
+    "totalvalue": 857.34,
+    "created_at": "2025-04-03T17:50:04.325841+00:00"
+  },
+  {
+    "id": 3,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 5,
+    "price": 107.96,
+    "date": "2022-11-18",
+    "totalvalue": 539.8,
+    "created_at": "2025-04-04T08:50:08.407549+00:00"
+  },
+  {
+    "id": 5,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 120,
+    "price": 10.05,
+    "date": "2022-12-02",
+    "totalvalue": 1206.0,
+    "created_at": "2025-04-04T08:51:34.246908+00:00"
+  },
+  {
+    "id": 7,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 1,
+    "price": 105.81,
+    "date": "2022-12-09",
+    "totalvalue": 105.81,
+    "created_at": "2025-04-04T08:52:54.247261+00:00"
+  },
+  {
+    "id": 8,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 2,
+    "price": 93.54,
+    "date": "2022-12-14",
+    "totalvalue": 187.08,
+    "created_at": "2025-04-04T08:53:25.804859+00:00"
+  },
+  {
+    "id": 9,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 2,
+    "price": 106.63,
+    "date": "2023-01-03",
+    "totalvalue": 213.26,
+    "created_at": "2025-04-04T08:53:56.131663+00:00"
+  },
+  {
+    "id": 10,
+    "type": "buy",
+    "ativo_id": 5,
+    "quantity": 15,
+    "price": 76.89,
+    "date": "2023-01-03",
+    "totalvalue": 1153.35,
+    "created_at": "2025-04-04T08:54:29.916895+00:00"
+  },
+  {
+    "id": 11,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 1,
+    "price": 13.22,
+    "date": "2023-01-04",
+    "totalvalue": 13.22,
+    "created_at": "2025-04-04T09:00:58.120451+00:00"
+  },
+  {
+    "id": 12,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 21,
+    "price": 10.02,
+    "date": "2023-01-05",
+    "totalvalue": 210.42,
+    "created_at": "2025-04-04T09:01:23.364535+00:00"
+  },
+  {
+    "id": 13,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 155,
+    "price": 13.26,
+    "date": "2023-01-05",
+    "totalvalue": 2055.3,
+    "created_at": "2025-04-04T09:02:04.575517+00:00"
+  },
+  {
+    "id": 14,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 62,
+    "price": 10.03,
+    "date": "2023-01-06",
+    "totalvalue": 621.86,
+    "created_at": "2025-04-04T09:02:34.405502+00:00"
+  },
+  {
+    "id": 15,
+    "type": "buy",
+    "ativo_id": 5,
+    "quantity": 15,
+    "price": 77.88,
+    "date": "2023-02-04",
+    "totalvalue": 1168.2,
+    "created_at": "2025-04-04T09:03:13.099778+00:00"
+  },
+  {
+    "id": 16,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 88,
+    "price": 9.91,
+    "date": "2023-02-06",
+    "totalvalue": 872.08,
+    "created_at": "2025-04-04T09:03:43.401113+00:00"
+  },
+  {
+    "id": 17,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 2,
+    "price": 93.89,
+    "date": "2023-02-07",
+    "totalvalue": 187.78,
+    "created_at": "2025-04-04T09:04:15.860027+00:00"
+  },
+  {
+    "id": 18,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 2,
+    "price": 106.59,
+    "date": "2023-02-07",
+    "totalvalue": 213.18,
+    "created_at": "2025-04-04T09:04:41.448545+00:00"
+  },
+  {
+    "id": 19,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 72,
+    "price": 13.45,
+    "date": "2023-02-09",
+    "totalvalue": 968.4,
+    "created_at": "2025-04-04T09:05:03.369245+00:00"
+  },
+  {
+    "id": 20,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 3,
+    "price": 108.94,
+    "date": "2023-06-30",
+    "totalvalue": 326.82,
+    "created_at": "2025-04-04T09:05:33.459163+00:00"
+  },
+  {
+    "id": 21,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 21,
+    "price": 14.93,
+    "date": "2023-06-30",
+    "totalvalue": 313.53,
+    "created_at": "2025-04-04T09:05:58.852623+00:00"
+  },
+  {
+    "id": 22,
+    "type": "sell",
+    "ativo_id": 6,
+    "quantity": 515,
+    "price": 15.92,
+    "date": "2024-03-13",
+    "totalvalue": 8198.8,
+    "created_at": "2025-04-04T09:07:34.099197+00:00"
+  },
+  {
+    "id": 23,
+    "type": "buy",
+    "ativo_id": 5,
+    "quantity": 26,
+    "price": 76,
+    "date": "2022-11-23",
+    "totalvalue": 1976,
+    "created_at": "2025-04-04T09:09:44.19514+00:00"
+  },
+  {
+    "id": 24,
+    "type": "sell",
+    "ativo_id": 5,
+    "quantity": 56,
+    "price": 87.63,
+    "date": "2024-03-13",
+    "totalvalue": 4907.28,
+    "created_at": "2025-04-04T09:10:39.564054+00:00"
+  },
+  {
+    "id": 25,
+    "type": "sell",
+    "ativo_id": 3,
+    "quantity": 311,
+    "price": 12,
+    "date": "2024-03-14",
+    "totalvalue": 3732,
+    "created_at": "2025-04-04T09:11:08.68493+00:00"
+  },
+  {
+    "id": 26,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 470,
+    "price": 16.35,
+    "date": "2025-03-14",
+    "totalvalue": 7684.5,
+    "created_at": "2025-04-04T09:11:59.218445+00:00"
+  },
+  {
+    "id": 27,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 15,
+    "price": 107.91,
+    "date": "2025-03-27",
+    "totalvalue": 1618.65,
+    "created_at": "2025-04-04T09:12:33.032493+00:00"
+  },
+  {
+    "id": 28,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 200,
+    "price": 16.36,
+    "date": "2025-03-27",
+    "totalvalue": 3272.0,
+    "created_at": "2025-04-04T09:12:57.773551+00:00"
+  },
+  {
+    "id": 29,
+    "type": "buy",
+    "ativo_id": 5,
+    "quantity": 60,
+    "price": 93.92,
+    "date": "2025-03-27",
+    "totalvalue": 5635.2,
+    "created_at": "2025-04-04T09:13:43.587391+00:00"
+  },
+  {
+    "id": 30,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 100,
+    "price": 11.58,
+    "date": "2025-03-28",
+    "totalvalue": 1158.0,
+    "created_at": "2025-04-04T09:14:09.932044+00:00"
+  },
+  {
+    "id": 31,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 20,
+    "price": 108.2,
+    "date": "2025-03-29",
+    "totalvalue": 2164.0,
+    "created_at": "2025-04-04T09:14:34.341051+00:00"
+  },
+  {
+    "id": 32,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 230,
+    "price": 16.32,
+    "date": "2025-03-29",
+    "totalvalue": 3753.6,
+    "created_at": "2025-04-04T09:15:05.709962+00:00"
+  },
+  {
+    "id": 33,
+    "type": "buy",
+    "ativo_id": 5,
+    "quantity": 100,
+    "price": 93.98,
+    "date": "2025-03-29",
+    "totalvalue": 9398.0,
+    "created_at": "2025-04-04T09:15:31.26832+00:00"
+  },
+  {
+    "id": 34,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 4,
+    "price": 130.1,
+    "date": "2025-04-01",
+    "totalvalue": 520.4,
+    "created_at": "2025-04-04T09:16:04.484178+00:00"
+  },
+  {
+    "id": 36,
+    "type": "buy",
+    "ativo_id": 7,
+    "quantity": 1023.67,
+    "price": 4.88,
+    "date": "2023-06-16",
+    "totalvalue": 4995.5096,
+    "created_at": "2025-04-04T09:41:00.534963+00:00"
+  },
+  {
+    "id": 37,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 100,
+    "price": 16.95,
+    "date": "2025-05-05",
+    "totalvalue": 1695.0,
+    "created_at": "2025-05-05T14:20:08.822841+00:00"
+  },
+  {
+    "id": 38,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 4,
+    "price": 130.47,
+    "date": "2025-05-05",
+    "totalvalue": 521.88,
+    "created_at": "2025-05-05T14:20:29.773235+00:00"
+  },
+  {
+    "id": 39,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 30,
+    "price": 12.0,
+    "date": "2025-05-05",
+    "totalvalue": 360.0,
+    "created_at": "2025-05-05T15:45:49.825892+00:00"
+  },
+  {
+    "id": 40,
+    "type": "buy",
+    "ativo_id": 4,
+    "quantity": 3,
+    "price": 110.7,
+    "date": "2025-05-05",
+    "totalvalue": 332.1,
+    "created_at": "2025-05-06T08:42:08.171191+00:00"
+  },
+  {
+    "id": 41,
+    "type": "buy",
+    "ativo_id": 2,
+    "quantity": 10,
+    "price": 133.03,
+    "date": "2025-06-23",
+    "totalvalue": 1330.3,
+    "created_at": "2025-06-23T13:50:16.510097+00:00"
+  },
+  {
+    "id": 42,
+    "type": "buy",
+    "ativo_id": 3,
+    "quantity": 240,
+    "price": 12.18,
+    "date": "2025-06-23",
+    "totalvalue": 2923.2,
+    "created_at": "2025-06-23T13:52:29.098249+00:00"
+  },
+  {
+    "id": 43,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 12,
+    "price": 17.36,
+    "date": "2025-07-07",
+    "totalvalue": 208.32,
+    "created_at": "2025-07-07T22:55:31.52349+00:00"
+  },
+  {
+    "id": 4,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 150,
+    "price": 13.04,
+    "date": "2022-11-18",
+    "totalvalue": 1956.0,
+    "created_at": "2025-04-04T08:50:34.548228+00:00"
+  },
+  {
+    "id": 6,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 116,
+    "price": 13.16,
+    "date": "2022-12-01",
+    "totalvalue": 1526.56,
+    "created_at": "2025-04-04T08:52:05.438851+00:00"
+  },
+  {
+    "id": 44,
+    "type": "buy",
+    "ativo_id": 6,
+    "quantity": 125,
+    "price": 17.27,
+    "date": "2025-07-18",
+    "totalvalue": 2158.75,
+    "created_at": "2025-07-24T10:53:17.038241+00:00"
+  }
+]

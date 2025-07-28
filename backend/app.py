@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from supabase import create_client
+from postgres_adapter import PostgreSQLClient
 import os
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -11,11 +11,57 @@ import json
 import requests
 import threading
 import time
+from decimal import Decimal
 
 # Carregar variáveis do arquivo .env
 load_dotenv()
 
 app = Flask(__name__)
+
+# Configure Flask to handle Decimal types in JSON serialization
+app.json.ensure_ascii = False
+app.json.sort_keys = False
+
+def custom_json_serializer(obj):
+    """Custom JSON serializer for Flask"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif hasattr(obj, 'isoformat'):  # Handle date objects
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+app.json.default = custom_json_serializer
+
+def convert_numeric_fields(data):
+    """Converte campos numéricos para float"""
+    if not data:
+        return data
+    
+    numeric_fields = [
+        'preco_atual', 'retorno_acumulado', 'retorno_anualizado', 
+        'volatilidade', 'max_drawdown', 'sharpe', 'abertura', 
+        'maxima', 'minima', 'fechamento', 'fechamento_ajustado',
+        'retorno_diario', 'mm20', 'bb2s', 'bb2i', 'pico', 'drawdown',
+        'quantity', 'price', 'initial_investment', 'current_value', 'value'
+    ]
+    
+    if isinstance(data, list):
+        return [convert_numeric_fields(item) for item in data]
+    elif isinstance(data, dict):
+        converted = {}
+        for key, value in data.items():
+            if key in numeric_fields and value is not None:
+                try:
+                    converted[key] = float(value)
+                except (ValueError, TypeError):
+                    converted[key] = value
+            else:
+                converted[key] = value
+        return converted
+    else:
+        return data
 
 # Lista de origens permitidas
 allowed_origins = [
@@ -72,25 +118,21 @@ def handle_preflight():
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
 
-# Configurações do Supabase
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+# Configurações do PostgreSQL
+POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT', '5432')
+POSTGRES_DB = os.environ.get('POSTGRES_DB', 'paridaderisco')
+POSTGRES_USER = os.environ.get('POSTGRES_USER', 'postgres')
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', 'postgres')
 
-# Verificar se as variáveis de ambiente estão definidas
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError(
-        "Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY precisam estar definidas"
-    )
-
-# Inicializar o cliente Supabase apenas se as credenciais estiverem presentes
+# Inicializar o cliente PostgreSQL
 supabase = None
-if SUPABASE_URL and SUPABASE_KEY:
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-        print("Conexao com Supabase estabelecida com sucesso.")
-    except Exception as e:
-        print(f"Erro ao conectar com o Supabase: {str(e)}")
-        print("Verifique se a URL e a chave estão corretas.")
+try:
+    supabase = PostgreSQLClient()
+    print("Conexao com PostgreSQL estabelecida com sucesso.")
+except Exception as e:
+    print(f"Erro ao conectar com PostgreSQL: {str(e)}")
+    print("Verifique se o PostgreSQL está rodando e as credenciais estão corretas.")
 
 # =========================
 # Funções para cálculos financeiros
@@ -108,7 +150,7 @@ def obter_dados_historicos(ticker, periodo_anos=5):
         pandas.DataFrame: DataFrame com os dados históricos ou None em caso de erro
     """
     if not supabase:
-        print("Conexão com Supabase não estabelecida")
+        print("Conexão com PostgreSQL não estabelecida")
         return None
         
     try:
@@ -299,7 +341,7 @@ def obter_resumo_ativo(ticker, periodo_anos=5):
         dict: Dicionário com todos os indicadores ou None em caso de erro
     """
     if not supabase:
-        print("Conexão com Supabase não estabelecida")
+        print("Conexão com PostgreSQL não estabelecida")
         return None
         
     try:
@@ -345,11 +387,10 @@ def obter_resumo_ativo(ticker, periodo_anos=5):
 
 @app.route('/api/status', methods=['GET'])
 def status():
-    """Endpoint para verificar o status da API e conexão com Supabase"""
+    """Endpoint para verificar o status da API e conexão com PostgreSQL"""
     if supabase:
         try:
-            # Modifique a consulta para evitar o erro de sintaxe
-            # Em vez de usar count(*), vamos apenas selecionar um registro limitado
+            # Testar conexão com uma consulta simples
             response = supabase.table('ativos').select('*').limit(1).execute()
             connection_status = "conectado"
         except Exception as e:
@@ -360,18 +401,52 @@ def status():
     return jsonify({
         "status": "online",
         "timestamp": datetime.now().isoformat(),
-        "supabase_connection": connection_status
+        "postgres_connection": connection_status
     })
+
+@app.route('/api/debug-types', methods=['GET'])
+def debug_types():
+    """Debug endpoint to check data types"""
+    if not supabase:
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
+    
+    try:
+        response = supabase.table('ativos').select('ticker, preco_atual, max_drawdown').limit(1).execute()
+        raw_data = response.data[0] if response.data else {}
+        
+        # Test conversion
+        converted_data = convert_numeric_fields(raw_data) if raw_data else {}
+        
+        return jsonify({
+            "raw_data": {
+                "ticker": repr(raw_data.get('ticker')),
+                "preco_atual": repr(raw_data.get('preco_atual')),
+                "preco_atual_type": str(type(raw_data.get('preco_atual'))),
+                "max_drawdown": repr(raw_data.get('max_drawdown')),
+                "max_drawdown_type": str(type(raw_data.get('max_drawdown')))
+            },
+            "converted_data": {
+                "ticker": repr(converted_data.get('ticker')),
+                "preco_atual": repr(converted_data.get('preco_atual')),
+                "preco_atual_type": str(type(converted_data.get('preco_atual'))),
+                "max_drawdown": repr(converted_data.get('max_drawdown')),
+                "max_drawdown_type": str(type(converted_data.get('max_drawdown')))
+            }
+        })
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
 
 @app.route('/api/ativos', methods=['GET'])
 def obter_ativos():
     """Endpoint para obter a lista de todos os ativos"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         response = supabase.table('ativos').select('*').execute()
-        return jsonify(response.data)
+        # Converter campos numéricos para float
+        converted_data = convert_numeric_fields(response.data)
+        return jsonify(converted_data)
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
@@ -379,12 +454,13 @@ def obter_ativos():
 def obter_ativo(ticker):
     """Endpoint para obter detalhes de um ativo específico"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         response = supabase.table('ativos').select('*').eq('ticker', ticker).execute()
         if response.data:
-            return jsonify(response.data[0])
+            converted_data = convert_numeric_fields(response.data[0])
+            return jsonify(converted_data)
         return jsonify({"erro": "Ativo não encontrado"}), 404
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
@@ -393,7 +469,7 @@ def obter_ativo(ticker):
 def obter_historico(ticker):
     """Endpoint para obter o histórico de preços de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obtém últimos 30 dias como padrão
@@ -406,8 +482,9 @@ def obter_historico(ticker):
             .gte('data', data_limite) \
             .order('data', desc=False) \
             .execute()
-            
-        return jsonify(response.data)
+        
+        converted_data = convert_numeric_fields(response.data)
+        return jsonify(converted_data)
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
@@ -415,7 +492,7 @@ def obter_historico(ticker):
 def obter_comparativo():
     """Endpoint para comparar o desempenho de múltiplos ativos"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obtém últimos 30 dias como padrão
@@ -462,7 +539,7 @@ def obter_comparativo():
 def api_retorno_acumulado(ticker):
     """Endpoint para calcular o retorno acumulado de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     periodo_anos = request.args.get('periodo', default=5, type=int)
     resultado = calcular_retorno_acumulado(ticker, periodo_anos)
@@ -480,7 +557,7 @@ def api_retorno_acumulado(ticker):
 def api_retorno_anualizado(ticker):
     """Endpoint para calcular o retorno anualizado de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     periodo_anos = request.args.get('periodo', default=5, type=int)
     resultado = calcular_retorno_anualizado(ticker, periodo_anos)
@@ -498,7 +575,7 @@ def api_retorno_anualizado(ticker):
 def api_volatilidade(ticker):
     """Endpoint para calcular a volatilidade de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     periodo_anos = request.args.get('periodo', default=5, type=int)
     resultado = calcular_volatilidade(ticker, periodo_anos)
@@ -516,7 +593,7 @@ def api_volatilidade(ticker):
 def api_max_drawdown(ticker):
     """Endpoint para calcular o máximo drawdown de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     periodo_anos = request.args.get('periodo', default=5, type=int)
     resultado = calcular_max_drawdown(ticker, periodo_anos)
@@ -534,7 +611,7 @@ def api_max_drawdown(ticker):
 def api_sharpe(ticker):
     """Endpoint para calcular o índice de Sharpe de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     periodo_anos = request.args.get('periodo', default=5, type=int)
     taxa_livre_risco = request.args.get('taxa_livre_risco', default=None, type=float)
@@ -554,7 +631,7 @@ def api_sharpe(ticker):
 def api_resumo_ativo(ticker):
     """Endpoint para obter o resumo completo de um ativo com todos os indicadores calculados"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     periodo_anos = request.args.get('periodo', default=5, type=int)
     resultado = obter_resumo_ativo(ticker, periodo_anos)
@@ -568,7 +645,7 @@ def api_resumo_ativo(ticker):
 def api_resumo_varios():
     """Endpoint para obter o resumo completo de múltiplos ativos"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     # Obter lista de tickers da query string (exemplo: ?tickers=BOVA11.SA,USDBRL=X,CDI)
     tickers_param = request.args.get('tickers', '')
@@ -598,7 +675,7 @@ def api_resumo_varios():
 def obter_indicadores_tecnicos(ticker):
     """Endpoint para obter indicadores técnicos de um ativo"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obtém últimos 30 dias como padrão
@@ -628,7 +705,7 @@ def obter_indicadores_tecnicos(ticker):
 def obter_cestas():
     """Endpoint para obter todas as cestas do usuário"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         response = supabase.table('cestas').select('*').execute()
@@ -641,7 +718,7 @@ def obter_cestas():
 def obter_cesta(id):
     """Endpoint para obter detalhes de uma cesta específica"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         response = supabase.table('cestas').select('*').eq('id', id).execute()
@@ -656,7 +733,7 @@ def obter_cesta(id):
 def criar_cesta():
     """Endpoint para criar uma nova cesta"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obter dados da requisição
@@ -698,7 +775,7 @@ def criar_cesta():
 def atualizar_cesta(id):
     """Endpoint para atualizar uma cesta existente"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Verificar se a cesta existe
@@ -743,7 +820,7 @@ def atualizar_cesta(id):
 def excluir_cesta(id):
     """Endpoint para excluir uma cesta"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Verificar se a cesta existe
@@ -763,7 +840,7 @@ def excluir_cesta(id):
 def get_transacoes():
     """Endpoint to get all transactions with asset details"""
     if not supabase:
-        return jsonify({"erro": "Supabase connection not established"}), 500
+        return jsonify({"erro": "PostgreSQL connection not established"}), 500
     
     try:
         # Get all transactions, ordered by date (newest first)
@@ -804,7 +881,7 @@ def get_transacoes():
 def add_transacao():
     """Endpoint to add a new transaction with asset relationship"""
     if not supabase:
-        return jsonify({"erro": "Supabase connection not established"}), 500
+        return jsonify({"erro": "PostgreSQL connection not established"}), 500
     
     try:
         data = request.json
@@ -901,7 +978,7 @@ def add_transacao():
 def delete_transacao(id):
     """Endpoint para excluir uma transação"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Verificar se a transação existe
@@ -953,7 +1030,7 @@ def delete_transacao(id):
 def get_carteira():
     """Endpoint para obter o resumo da carteira"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Buscar todas as transações
@@ -1064,7 +1141,7 @@ def get_carteira():
 def get_investment_funds():
     """Endpoint para obter todos os fundos de investimento"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         response = supabase.table('investment_funds').select('*').order('name', desc=False).execute()
@@ -1078,7 +1155,7 @@ def get_investment_funds():
 def create_investment_fund():
     """Endpoint para criar um novo fundo de investimento"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         data = request.json
@@ -1131,7 +1208,7 @@ def create_investment_fund():
 def update_investment_fund(fund_id):
     """Endpoint para atualizar um fundo de investimento existente"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         data = request.json
@@ -1190,7 +1267,7 @@ def update_investment_fund(fund_id):
 def delete_investment_fund(fund_id):
     """Endpoint para excluir um fundo de investimento"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Verificar se o fundo existe
@@ -1216,7 +1293,7 @@ def delete_investment_fund(fund_id):
 def get_cash_balance():
     """Endpoint para obter o saldo em caixa atual"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         response = supabase.table('cash_balance').select('*').order('id', desc=True).limit(1).execute()
@@ -1236,7 +1313,7 @@ def get_cash_balance():
 def update_cash_balance():
     """Endpoint para atualizar o saldo em caixa"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         data = request.json
@@ -1292,7 +1369,7 @@ def update_cash_balance():
 def update_prices():
     """Endpoint para atualizar preços dos ativos (modificado para usar RTD)"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Usar a nova função para atualizar via RTD
@@ -1311,7 +1388,7 @@ def update_prices():
 def get_last_update():
     """Endpoint para obter a data da última atualização de preços"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obter todos os ativos ordenados pela data de atualização (mais recente primeiro)
@@ -1335,7 +1412,7 @@ def get_last_update():
 def update_prices_rtd():
     """Endpoint para atualizar preços dos ativos utilizando a API RTD"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obter parâmetros da requisição
@@ -1376,7 +1453,7 @@ def update_prices_rtd():
 def obter_historico_por_datas(ticker):
     """Endpoint para obter o histórico de preços de um ativo por período de data específico"""
     if not supabase:
-        return jsonify({"erro": "Conexão com Supabase não estabelecida"}), 500
+        return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obter datas do request
@@ -1413,7 +1490,7 @@ def obter_historico_por_datas(ticker):
         # Estratégia para obter todos os registros (além do limite de 1000)
         todos_registros = []
         offset = 0
-        limite = 1000  # Limite padrão do Supabase
+        limite = 1000  # Limite padrão para paginação
         
         while True:
             # Buscar dados no banco com paginação
@@ -1454,7 +1531,7 @@ def atualizar_precos_rtd(supabase, api_url="http://rtd.blackboxinovacao.com.br/a
     Atualiza os preços dos ativos usando a API RTD
     
     Args:
-        supabase: Cliente Supabase inicializado
+        supabase: Cliente PostgreSQL inicializado
         api_url (str): URL base da API RTD
         single_run (bool): Se True, executa apenas uma atualização. Se False, executa em loop
         interval_seconds (int): Intervalo entre atualizações quando em loop
@@ -1583,10 +1660,10 @@ def atualizar_precos_rtd(supabase, api_url="http://rtd.blackboxinovacao.com.br/a
 if __name__ == '__main__':
     print("\nIniciando servidor de API...\n")
     
-    # Verificar conexão com o Supabase
+    # Verificar conexão com o PostgreSQL
     if not supabase:
-        print("API iniciada sem conexao com o Supabase. Endpoints relacionados a dados nao funcionarao.")
-        print("Defina as variáveis de ambiente SUPABASE_URL e SUPABASE_KEY ou configure-as no código.\n")
+        print("API iniciada sem conexao com o PostgreSQL. Endpoints relacionados a dados nao funcionarao.")
+        print("Verifique se o PostgreSQL está rodando e as variáveis de ambiente estão configuradas.\n")
     
     # Instruções de uso
     print("\nEndpoints existentes:")

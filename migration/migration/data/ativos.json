@@ -1,0 +1,86 @@
+[
+  {
+    "id": 2,
+    "ticker": "BOVA11.SA",
+    "nome": "BOVA11 (Ibovespa)",
+    "preco_atual": 130.77999877929688,
+    "retorno_acumulado": 37.59449478437082,
+    "retorno_anualizado": 6.598384555852799,
+    "volatilidade": 24.808928766658937,
+    "max_drawdown": -31.016584357063593,
+    "sharpe": 0.2659681366299241,
+    "data_atualizacao": "2025-07-25T16:21:45.881175+00:00"
+  },
+  {
+    "id": 3,
+    "ticker": "XFIX11.SA",
+    "nome": "XFIX11 (IFIX)",
+    "preco_atual": 12.1899995803833,
+    "retorno_acumulado": 9.784735556476875,
+    "retorno_anualizado": 2.2745400222926815,
+    "volatilidade": 9.274802627400389,
+    "max_drawdown": -15.586543756636706,
+    "sharpe": 0.24523864427832107,
+    "data_atualizacao": "2025-07-25T16:21:46.462361+00:00"
+  },
+  {
+    "id": 4,
+    "ticker": "IB5M11.SA",
+    "nome": "IB5M11 (IMAB5+)",
+    "preco_atual": 113.5199966430664,
+    "retorno_acumulado": 14.774683179558457,
+    "retorno_anualizado": 2.797452417462165,
+    "volatilidade": 15.33532950156395,
+    "max_drawdown": -18.26530767946827,
+    "sharpe": 0.18241880079439254,
+    "data_atualizacao": "2025-07-25T16:21:47.011362+00:00"
+  },
+  {
+    "id": 5,
+    "ticker": "B5P211.SA",
+    "nome": "B5P211 (IMAB5)",
+    "preco_atual": 96.75,
+    "retorno_acumulado": 41.95592291893764,
+    "retorno_anualizado": 8.474652079715383,
+    "volatilidade": 3.5160183242585843,
+    "max_drawdown": -2.3431910840182923,
+    "sharpe": 2.4102980411805492,
+    "data_atualizacao": "2025-07-25T16:21:47.534805+00:00"
+  },
+  {
+    "id": 6,
+    "ticker": "FIXA11.SA",
+    "nome": "FIXA11 (Pré)",
+    "preco_atual": 17.3799991607666,
+    "retorno_acumulado": 23.41390056691761,
+    "retorno_anualizado": 5.199047526787481,
+    "volatilidade": 7.086121132441408,
+    "max_drawdown": -10.869563663264614,
+    "sharpe": 0.7336944189375202,
+    "data_atualizacao": "2025-07-25T16:21:48.054342+00:00"
+  },
+  {
+    "id": 7,
+    "ticker": "USDBRL=X",
+    "nome": "USD/BRL (Dólar)",
+    "preco_atual": 5.51639986038208,
+    "retorno_acumulado": 22.022488654053916,
+    "retorno_anualizado": 4.065540003335966,
+    "volatilidade": 17.67437512661607,
+    "max_drawdown": -21.95909394462844,
+    "sharpe": 0.23002453971985784,
+    "data_atualizacao": "2025-07-25T16:21:48.555171+00:00"
+  },
+  {
+    "id": 1,
+    "ticker": "CDI",
+    "nome": "CDI",
+    "preco_atual": 219.9036087110091,
+    "retorno_acumulado": 53.13619076339282,
+    "retorno_anualizado": 8.91219621347108,
+    "volatilidade": 0.2608039792743967,
+    "max_drawdown": 0.0,
+    "sharpe": 34.172010098413395,
+    "data_atualizacao": "2025-07-25T16:21:49.173165+00:00"
+  }
+]

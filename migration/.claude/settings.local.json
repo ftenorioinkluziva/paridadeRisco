@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(set PYTHONIOENCODING=utf-8)",
+      "Bash(powershell:*)",
+      "Bash(set PGCLIENTENCODING=UTF8)",
+      "Bash(psql:*)"
+    ],
+    "deny": []
+  }
+}

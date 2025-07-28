@@ -28,7 +28,13 @@
       "Bash(docker-compose restart:*)",
       "Bash(docker-compose exec:*)",
       "Bash(docker-compose:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(pip install:*)",
+      "Bash(docker:*)",
+      "Bash(timeout:*)",
+      "Bash(POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=paridaderisco POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres python create_schema.py)",
+      "Bash(POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=paridaderisco POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres python insert_data.py)"
     ],
     "deny": []
   }

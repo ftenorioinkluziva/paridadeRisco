@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "nome": "Risky Parity",
+    "descricao": "Cesta criada em 02/04/2025",
+    "ativos": {
+      "CDI": 20,
+      "USDBRL=X": 6,
+      "B5P211.SA": 20,
+      "BOVA11.SA": 5,
+      "FIXA11.SA": 35,
+      "IB5M11.SA": 8,
+      "XFIX11.SA": 6
+    },
+    "data_criacao": "2025-04-02T11:40:21.352341+00:00",
+    "data_atualizacao": "2025-04-02T11:40:21.352341+00:00"
+  },
+  {
+    "id": 2,
+    "nome": "Risky Parity Original",
+    "descricao": "Cesta criada em 02/04/2025",
+    "ativos": {
+      "CDI": 12,
+      "USDBRL=X": 6,
+      "B5P211.SA": 20,
+      "BOVA11.SA": 5,
+      "FIXA11.SA": 35,
+      "IB5M11.SA": 8,
+      "XFIX11.SA": 14.000000000000002
+    },
+    "data_criacao": "2025-04-02T22:41:15.224637+00:00",
+    "data_atualizacao": "2025-04-03T08:47:29.90561+00:00"
+  }
+]

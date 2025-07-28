@@ -1,0 +1,13 @@
+{
+  "extraction_date": "2025-07-25T18:01:25.771946",
+  "tables_extracted": 6,
+  "total_records": 13119,
+  "table_counts": {
+    "ativos": 7,
+    "dados_historicos": 13065,
+    "cestas": 2,
+    "transacoes": 43,
+    "investment_funds": 1,
+    "cash_balance": 1
+  }
+}
