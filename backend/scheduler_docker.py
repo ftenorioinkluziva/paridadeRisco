@@ -93,8 +93,12 @@ class SchedulerDocker:
         
     def setup_signal_handlers(self):
         """Configura handlers para sinais Docker"""
-        signal.signal(signal.SIGTERM, self.signal_handler)
-        signal.signal(signal.SIGINT, self.signal_handler)
+        try:
+            signal.signal(signal.SIGTERM, self.signal_handler)
+            signal.signal(signal.SIGINT, self.signal_handler)
+        except ValueError:
+            # Signal handlers só funcionam na thread principal
+            self.logger.warning("Signal handlers nao disponíveis em thread secundária")
         
     def signal_handler(self, signum, frame):
         """Handler para sinais de shutdown do Docker"""
