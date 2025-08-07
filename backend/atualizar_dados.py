@@ -4,7 +4,7 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 from bcb import sgs  # Biblioteca para acessar dados do Banco Central do Brasil
 from postgres_adapter import PostgreSQLClient
@@ -72,7 +72,7 @@ def obter_ultimo_registro_data(ticker):
         if response.data and len(response.data) > 0:
             # Converter para string se for um objeto datetime
             data = response.data[0]['data']
-            if isinstance(data, datetime.date) or isinstance(data, datetime):
+            if isinstance(data, (date, datetime)):
                 return data.strftime('%Y-%m-%d')
             return data
         return None
@@ -129,6 +129,11 @@ def buscar_dados_historicos(ticker, nome):
         # Se a data inicial for maior ou igual à data atual, não há novos dados
         if data_inicial.date() >= data_final.date():
             print(f"  ✅ Dados para {nome} já estão atualizados até {ultima_data}")
+            return None
+        
+        # Se a diferença for de apenas 1 dia, também não há novos dados úteis
+        if (data_final.date() - data_inicial.date()).days <= 1:
+            print(f"  ✅ Dados para {nome} estão atualizados (diferença mínima)")
             return None
         
         # Buscar dados do Yahoo Finance
@@ -282,7 +287,7 @@ def preparar_dados_historicos(dados_multi, ticker, nome):
         # Converter a coluna de data para string no formato ISO
         if isinstance(dados['data'].iloc[0], pd.Timestamp):
             dados['data'] = dados['data'].dt.strftime('%Y-%m-%d')
-        elif isinstance(dados['data'].iloc[0], (datetime.date, datetime)):
+        elif isinstance(dados['data'].iloc[0], (date, datetime)):
             dados['data'] = dados['data'].apply(lambda x: x.strftime('%Y-%m-%d') if x is not None else None)
 
         # NOVO: Calcular indicadores técnicos
@@ -508,9 +513,22 @@ def processar_cdi():
             return None
         
         # Código 12 = CDI na API do BCB
-        cdi_diario = sgs.get({'CDI': 12}, 
-                             start=data_inicial.strftime('%Y-%m-%d'), 
-                             end=data_final.strftime('%Y-%m-%d'))
+        try:
+            cdi_diario = sgs.get({'CDI': 12}, 
+                                 start=data_inicial.strftime('%Y-%m-%d'), 
+                                 end=data_final.strftime('%Y-%m-%d'))
+        except Exception as api_error:
+            print(f"  ⚠️ Erro específico da API do BCB: {str(api_error)}")
+            # Tentar com um período menor (últimos 30 dias)
+            try:
+                print("  Tentando com período reduzido (últimos 30 dias)...")
+                data_inicial_reduzida = datetime.now() - timedelta(days=30)
+                cdi_diario = sgs.get({'CDI': 12}, 
+                                     start=data_inicial_reduzida.strftime('%Y-%m-%d'), 
+                                     end=data_final.strftime('%Y-%m-%d'))
+            except Exception as fallback_error:
+                print(f"  ⚠️ Erro também com período reduzido: {str(fallback_error)}")
+                return None
         
         if not cdi_diario.empty:
             print(f"  ✅ Obtidos {len(cdi_diario)} registros para CDI")

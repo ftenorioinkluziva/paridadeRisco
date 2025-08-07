@@ -305,105 +305,93 @@ class PostgreSQLTable:
             raise e
             
     def upsert(self, data, on_conflict=None):
-        """Insere ou atualiza dados com base em conflito"""
+        """Insere ou atualiza dados usando PostgreSQL ON CONFLICT"""
         try:
-            # Se data é uma lista, processar múltiplos registros
             if isinstance(data, list):
+                # Processar em lotes para múltiplos registros
                 results = []
                 for item in data:
-                    # Verificar se o registro já existe
-                    where_conditions = []
-                    if on_conflict:
-                        conflict_columns = on_conflict.split(',')
-                        for col in conflict_columns:
-                            col = col.strip()
-                            if col in item and item[col] is not None:
-                                where_conditions.append({
-                                    'clause': f"{col} = %s",
-                                    'params': [item[col]]
-                                })
+                    # Criar uma cópia dos dados removendo o id
+                    item_copy = {k: v for k, v in item.items() if k != 'id'}
                     
-                    if where_conditions:
-                        # Buscar registro existente
-                        existing = self.adapter.select(
-                            table=self.table_name,
-                            where_conditions=where_conditions
-                        )
+                    if on_conflict:
+                        # Usar PostgreSQL UPSERT com ON CONFLICT
+                        conflict_columns = [col.strip() for col in on_conflict.split(',')]
+                        columns = list(item_copy.keys())
+                        placeholders = ', '.join(['%s'] * len(columns))
+                        values = list(item_copy.values())
                         
-                        if existing and len(existing) > 0:
-                            # Atualizar registro existente
-                            # Remover o campo 'id' se estiver presente para evitar conflitos
-                            if 'id' in item:
-                                del item['id']
-                            result = self.adapter.update(self.table_name, item, where_conditions)
-                            if result:
-                                results.append(result)
+                        # Construir cláusulas de atualização
+                        update_clauses = ', '.join([f"{col} = EXCLUDED.{col}" for col in columns if col not in conflict_columns])
+                        
+                        if update_clauses:
+                            conflict_clause = ', '.join(conflict_columns)
+                            query = f"""
+                                INSERT INTO {self.table_name} ({', '.join(columns)}) 
+                                VALUES ({placeholders})
+                                ON CONFLICT ({conflict_clause}) 
+                                DO UPDATE SET {update_clauses}
+                                RETURNING *
+                            """
                         else:
-                            # Inserir novo registro
-                            # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
-                            if 'id' in item:
-                                del item['id']
-                            result = self.adapter.insert(self.table_name, item)
-                            if result:
-                                results.append(result)
+                            # Se não há colunas para atualizar, apenas ignore o conflito
+                            conflict_clause = ', '.join(conflict_columns)
+                            query = f"""
+                                INSERT INTO {self.table_name} ({', '.join(columns)}) 
+                                VALUES ({placeholders})
+                                ON CONFLICT ({conflict_clause}) 
+                                DO NOTHING
+                                RETURNING *
+                            """
+                        
+                        result = self.adapter.execute_query(query, values)
+                        if result:
+                            results.extend(result)
                     else:
-                        # Sem condições de conflito, apenas inserir
-                        # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
-                        if 'id' in item:
-                            del item['id']
-                        result = self.adapter.insert(self.table_name, item)
+                        # Sem on_conflict, apenas inserir
+                        result = self.adapter.insert(self.table_name, item_copy)
                         if result:
                             results.append(result)
                 
                 return MockSupabaseResponse(results)
             else:
                 # Processar um único registro
-                where_conditions = []
-                if on_conflict:
-                    conflict_columns = on_conflict.split(',')
-                    for col in conflict_columns:
-                        col = col.strip()
-                        if col in data and data[col] is not None:
-                            where_conditions.append({
-                                'clause': f"{col} = %s",
-                                'params': [data[col]]
-                            })
+                data_copy = {k: v for k, v in data.items() if k != 'id'}
                 
-                if where_conditions:
-                    # Buscar registro existente
-                    existing = self.adapter.select(
-                        table=self.table_name,
-                        where_conditions=where_conditions
-                    )
+                if on_conflict:
+                    # Usar PostgreSQL UPSERT com ON CONFLICT
+                    conflict_columns = [col.strip() for col in on_conflict.split(',')]
+                    columns = list(data_copy.keys())
+                    placeholders = ', '.join(['%s'] * len(columns))
+                    values = list(data_copy.values())
                     
-                    if existing and len(existing) > 0:
-                        # Atualizar registro existente
-                        # Remover o campo 'id' se estiver presente para evitar conflitos
-                        if 'id' in data:
-                            data_copy = data.copy()
-                            del data_copy['id']
-                        else:
-                            data_copy = data
-                        result = self.adapter.update(self.table_name, data_copy, where_conditions)
-                        return MockSupabaseResponse([result] if result else [])
+                    # Construir cláusulas de atualização
+                    update_clauses = ', '.join([f"{col} = EXCLUDED.{col}" for col in columns if col not in conflict_columns])
+                    
+                    if update_clauses:
+                        conflict_clause = ', '.join(conflict_columns)
+                        query = f"""
+                            INSERT INTO {self.table_name} ({', '.join(columns)}) 
+                            VALUES ({placeholders})
+                            ON CONFLICT ({conflict_clause}) 
+                            DO UPDATE SET {update_clauses}
+                            RETURNING *
+                        """
                     else:
-                        # Inserir novo registro
-                        # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
-                        if 'id' in data:
-                            data_copy = data.copy()
-                            del data_copy['id']
-                        else:
-                            data_copy = data
-                        result = self.adapter.insert(self.table_name, data_copy)
-                        return MockSupabaseResponse([result] if result else [])
+                        # Se não há colunas para atualizar, apenas ignore o conflito
+                        conflict_clause = ', '.join(conflict_columns)
+                        query = f"""
+                            INSERT INTO {self.table_name} ({', '.join(columns)}) 
+                            VALUES ({placeholders})
+                            ON CONFLICT ({conflict_clause}) 
+                            DO NOTHING
+                            RETURNING *
+                        """
+                    
+                    result = self.adapter.execute_query(query, values)
+                    return MockSupabaseResponse(result if result else [])
                 else:
-                    # Sem condições de conflito, apenas inserir
-                    # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
-                    if 'id' in data:
-                        data_copy = data.copy()
-                        del data_copy['id']
-                    else:
-                        data_copy = data
+                    # Sem on_conflict, apenas inserir
                     result = self.adapter.insert(self.table_name, data_copy)
                     return MockSupabaseResponse([result] if result else [])
         except Exception as e:

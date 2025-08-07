@@ -34,7 +34,11 @@
       "Bash(docker:*)",
       "Bash(timeout:*)",
       "Bash(POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=paridaderisco POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres python create_schema.py)",
-      "Bash(POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=paridaderisco POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres python insert_data.py)"
+      "Bash(POSTGRES_HOST=localhost POSTGRES_PORT=5433 POSTGRES_DB=paridaderisco POSTGRES_USER=postgres POSTGRES_PASSWORD=postgres python insert_data.py)",
+      "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" atualizar_dados.py)",
+      "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" -m pip install psycopg2-binary)",
+      "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" temp_fix.py)",
+      "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" -c \"from dateutil.relativedelta import relativedelta; print(''dateutil imported successfully'')\")"
     ],
     "deny": []
   }
