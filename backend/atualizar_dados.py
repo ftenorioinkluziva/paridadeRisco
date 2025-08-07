@@ -7,7 +7,7 @@ import requests
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from bcb import sgs  # Biblioteca para acessar dados do Banco Central do Brasil
-from supabase import create_client
+from postgres_adapter import PostgreSQLClient
 import os
 import json
 from dotenv import load_dotenv
@@ -15,24 +15,26 @@ from dotenv import load_dotenv
 # Carregar variáveis do arquivo .env
 load_dotenv()
 
-# Configurações do Supabase
-# Agora usando variáveis de ambiente carregadas do arquivo .env
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+# Configurações do PostgreSQL
+POSTGRES_HOST = os.environ.get('POSTGRES_HOST', 'localhost')
+POSTGRES_PORT = os.environ.get('POSTGRES_PORT', '5432')
+POSTGRES_DB = os.environ.get('POSTGRES_DB', 'paridaderisco')
+POSTGRES_USER = os.environ.get('POSTGRES_USER', 'postgres')
+POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', 'postgres')
 
 # Verificar se as variáveis de ambiente estão definidas
-if not SUPABASE_URL or not SUPABASE_KEY:
+if not POSTGRES_HOST or not POSTGRES_DB or not POSTGRES_USER or not POSTGRES_PASSWORD:
     raise RuntimeError(
-        "Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY precisam estar definidas"
+        "Variáveis de ambiente POSTGRES_HOST, POSTGRES_DB, POSTGRES_USER e POSTGRES_PASSWORD precisam estar definidas"
     )
 
-# Inicializa o cliente do Supabase
+# Inicializar o cliente PostgreSQL
 try:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-    print("✅ Conexão com Supabase estabelecida com sucesso.")
+    supabase = PostgreSQLClient()
+    print("✅ Conexão com PostgreSQL estabelecida com sucesso.")
 except Exception as e:
-    print(f"⚠️ Erro ao conectar com o Supabase: {str(e)}")
-    print("Verifique se as credenciais estão corretas.")
+    print(f"⚠️ Erro ao conectar com o PostgreSQL: {str(e)}")
+    print("Verifique se o PostgreSQL está rodando e as credenciais estão corretas.")
     exit(1)
 
 # Configuração de visualização
@@ -68,7 +70,11 @@ def obter_ultimo_registro_data(ticker):
             .execute()
             
         if response.data and len(response.data) > 0:
-            return response.data[0]['data']
+            # Converter para string se for um objeto datetime
+            data = response.data[0]['data']
+            if isinstance(data, datetime.date) or isinstance(data, datetime):
+                return data.strftime('%Y-%m-%d')
+            return data
         return None
     except Exception as e:
         print(f"⚠️ Erro ao consultar último registro para {ticker}: {str(e)}")
@@ -276,6 +282,8 @@ def preparar_dados_historicos(dados_multi, ticker, nome):
         # Converter a coluna de data para string no formato ISO
         if isinstance(dados['data'].iloc[0], pd.Timestamp):
             dados['data'] = dados['data'].dt.strftime('%Y-%m-%d')
+        elif isinstance(dados['data'].iloc[0], (datetime.date, datetime)):
+            dados['data'] = dados['data'].apply(lambda x: x.strftime('%Y-%m-%d') if x is not None else None)
 
         # NOVO: Calcular indicadores técnicos
         dados = calcular_indicadores_tecnicos(dados)

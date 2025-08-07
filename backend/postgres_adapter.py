@@ -53,12 +53,20 @@ class PostgreSQLAdapter:
     def connect(self):
         """Estabelece conexão com PostgreSQL"""
         try:
+            host = os.getenv('POSTGRES_HOST', 'localhost')
+            port = os.getenv('POSTGRES_PORT', '5432')
+            database = os.getenv('POSTGRES_DB', 'paridaderisco')
+            user = os.getenv('POSTGRES_USER', 'postgres')
+            password = os.getenv('POSTGRES_PASSWORD', 'postgres')
+            
+            print(f"Tentando conectar ao PostgreSQL com: host={host}, port={port}, database={database}, user={user}")
+            
             self.connection = psycopg2.connect(
-                host=os.getenv('POSTGRES_HOST', 'localhost'),
-                port=os.getenv('POSTGRES_PORT', '5432'),
-                database=os.getenv('POSTGRES_DB', 'paridaderisco'),
-                user=os.getenv('POSTGRES_USER', 'postgres'),
-                password=os.getenv('POSTGRES_PASSWORD', 'postgres')
+                host=host,
+                port=port,
+                database=database,
+                user=user,
+                password=password
             )
             print("Conexão com PostgreSQL estabelecida com sucesso.")
         except Exception as e:
@@ -115,9 +123,16 @@ class PostgreSQLAdapter:
     
     def insert(self, table, data):
         """Simula o .insert() do Supabase"""
-        columns = ', '.join(data.keys())
-        placeholders = ', '.join(['%s'] * len(data))
-        values = list(data.values())
+        # Criar uma cópia dos dados para não modificar o original
+        data_copy = data.copy()
+        
+        # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
+        if 'id' in data_copy:
+            del data_copy['id']
+        
+        columns = ', '.join(data_copy.keys())
+        placeholders = ', '.join(['%s'] * len(data_copy))
+        values = list(data_copy.values())
         
         query = f"INSERT INTO {table} ({columns}) VALUES ({placeholders}) RETURNING *"
         result = self.execute_query(query, values)
@@ -128,7 +143,14 @@ class PostgreSQLAdapter:
         set_clauses = []
         params = []
         
-        for key, value in data.items():
+        # Criar uma cópia dos dados para não modificar o original
+        data_copy = data.copy()
+        
+        # Remover o campo 'id' se estiver presente para evitar tentar atualizar a chave primária
+        if 'id' in data_copy:
+            del data_copy['id']
+        
+        for key, value in data_copy.items():
             set_clauses.append(f"{key} = %s")
             params.append(value)
         
@@ -281,6 +303,111 @@ class PostgreSQLTable:
         except Exception as e:
             self._reset()
             raise e
+            
+    def upsert(self, data, on_conflict=None):
+        """Insere ou atualiza dados com base em conflito"""
+        try:
+            # Se data é uma lista, processar múltiplos registros
+            if isinstance(data, list):
+                results = []
+                for item in data:
+                    # Verificar se o registro já existe
+                    where_conditions = []
+                    if on_conflict:
+                        conflict_columns = on_conflict.split(',')
+                        for col in conflict_columns:
+                            col = col.strip()
+                            if col in item and item[col] is not None:
+                                where_conditions.append({
+                                    'clause': f"{col} = %s",
+                                    'params': [item[col]]
+                                })
+                    
+                    if where_conditions:
+                        # Buscar registro existente
+                        existing = self.adapter.select(
+                            table=self.table_name,
+                            where_conditions=where_conditions
+                        )
+                        
+                        if existing and len(existing) > 0:
+                            # Atualizar registro existente
+                            # Remover o campo 'id' se estiver presente para evitar conflitos
+                            if 'id' in item:
+                                del item['id']
+                            result = self.adapter.update(self.table_name, item, where_conditions)
+                            if result:
+                                results.append(result)
+                        else:
+                            # Inserir novo registro
+                            # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
+                            if 'id' in item:
+                                del item['id']
+                            result = self.adapter.insert(self.table_name, item)
+                            if result:
+                                results.append(result)
+                    else:
+                        # Sem condições de conflito, apenas inserir
+                        # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
+                        if 'id' in item:
+                            del item['id']
+                        result = self.adapter.insert(self.table_name, item)
+                        if result:
+                            results.append(result)
+                
+                return MockSupabaseResponse(results)
+            else:
+                # Processar um único registro
+                where_conditions = []
+                if on_conflict:
+                    conflict_columns = on_conflict.split(',')
+                    for col in conflict_columns:
+                        col = col.strip()
+                        if col in data and data[col] is not None:
+                            where_conditions.append({
+                                'clause': f"{col} = %s",
+                                'params': [data[col]]
+                            })
+                
+                if where_conditions:
+                    # Buscar registro existente
+                    existing = self.adapter.select(
+                        table=self.table_name,
+                        where_conditions=where_conditions
+                    )
+                    
+                    if existing and len(existing) > 0:
+                        # Atualizar registro existente
+                        # Remover o campo 'id' se estiver presente para evitar conflitos
+                        if 'id' in data:
+                            data_copy = data.copy()
+                            del data_copy['id']
+                        else:
+                            data_copy = data
+                        result = self.adapter.update(self.table_name, data_copy, where_conditions)
+                        return MockSupabaseResponse([result] if result else [])
+                    else:
+                        # Inserir novo registro
+                        # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
+                        if 'id' in data:
+                            data_copy = data.copy()
+                            del data_copy['id']
+                        else:
+                            data_copy = data
+                        result = self.adapter.insert(self.table_name, data_copy)
+                        return MockSupabaseResponse([result] if result else [])
+                else:
+                    # Sem condições de conflito, apenas inserir
+                    # Remover o campo 'id' se estiver presente para permitir que o PostgreSQL gere automaticamente
+                    if 'id' in data:
+                        data_copy = data.copy()
+                        del data_copy['id']
+                    else:
+                        data_copy = data
+                    result = self.adapter.insert(self.table_name, data_copy)
+                    return MockSupabaseResponse([result] if result else [])
+        except Exception as e:
+            raise e
     
     def _reset(self):
         """Reseta condições da query"""
@@ -296,6 +423,10 @@ class MockSupabaseResponse:
     def __init__(self, data, count=None):
         self.data = data
         self.count = count if count is not None else len(data) if data else 0
+    
+    def execute(self):
+        """Simula o método execute do Supabase, retornando a si mesmo"""
+        return self
 
 class PostgreSQLClient:
     """Cliente principal que simula o cliente Supabase"""

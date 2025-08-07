@@ -1682,4 +1682,4 @@ if __name__ == '__main__':
     print("- GET /api/calculo/resumo/<ticker>?periodo=5 - Resumo completo de um ativo")
     print("- GET /api/calculo/resumo-varios?tickers=ticker1,ticker2&periodo=5 - Resumo de múltiplos ativos\n")
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    app.run(debug=True, host='0.0.0.0', port=5002)
