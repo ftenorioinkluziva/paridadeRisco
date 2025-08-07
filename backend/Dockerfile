@@ -1,4 +1,4 @@
-# Backend Dockerfile
+# Backend Dockerfile - Versão Simples (funcional)
 FROM python:3.10-slim-bullseye
 WORKDIR /app
 
@@ -6,7 +6,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     tzdata \
-    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
@@ -16,15 +15,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
-# Fix line endings and make entrypoint executable
-RUN dos2unix docker-entrypoint.sh && chmod +x docker-entrypoint.sh
-
 RUN chown -R appuser:appuser /app
 
 EXPOSE 5001
 
 USER appuser
 
-# Use entrypoint script with fallback
-ENTRYPOINT ["bash", "./docker-entrypoint.sh"]
+# Comando direto baseado na variável RUN_MODE
+CMD ["sh", "-c", "if [ \"$RUN_MODE\" = 'scheduler-only' ]; then python scheduler_docker.py; elif [ \"$RUN_MODE\" = 'api-only' ]; then python app.py; else python app_with_scheduler.py; fi"]

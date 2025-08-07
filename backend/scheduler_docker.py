@@ -17,7 +17,7 @@ import time
 import logging
 import threading
 import signal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Dict, List, Optional
 import json
 
@@ -222,7 +222,12 @@ class SchedulerDocker:
                     .execute()
                 
                 if response.data:
-                    ultima_data = datetime.strptime(response.data[0]['data'], '%Y-%m-%d').date()
+                    data_str = response.data[0]['data']
+                    # Converter data se já não for string
+                    if isinstance(data_str, date):
+                        ultima_data = data_str
+                    else:
+                        ultima_data = datetime.strptime(data_str, '%Y-%m-%d').date()
                     dias_sem_atualizacao = (hoje - ultima_data).days
                     
                     if dias_sem_atualizacao > 3:

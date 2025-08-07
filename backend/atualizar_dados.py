@@ -575,6 +575,13 @@ def processar_cdi():
 def atualizar_dados():
     """Função principal que coordena a atualização de todos os dados"""
     
+    # Corrigir sequência de ID se necessário
+    try:
+        from fix_sequence import fix_sequence
+        fix_sequence()
+    except Exception as e:
+        print(f"Aviso: Não foi possível corrigir sequência: {e}")
+    
     # Lista de ativos com tickers corretos
     ativos = {
         'BOVA11.SA': 'BOVA11 (Ibovespa)',
