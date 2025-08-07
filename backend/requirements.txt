@@ -11,3 +11,5 @@ python-bcb==0.3.3
 yfinance
 matplotlib
 seaborn
+APScheduler>=3.10.0
+tzlocal>=3.0

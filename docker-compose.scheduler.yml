@@ -1,5 +1,8 @@
+# Docker Compose com Scheduler Separado
+# Para usar: docker-compose -f docker-compose.scheduler.yml up
 
 services:
+  # API Flask (sem scheduler)
   backend:
     build:
       context: ./backend
@@ -22,6 +25,42 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONIOENCODING=utf-8
       
+      # Modo de execução
+      - RUN_MODE=api-only
+      - SCHEDULER_ENABLED=false
+      
+    restart: unless-stopped
+    ports:
+      - "5002:5001"
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Scheduler separado
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      # Database configuration
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=paridaderisco
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      
+      # General Python configuration
+      - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
+      - TZ=America/Sao_Paulo
+      
+      # Modo de execução
+      - RUN_MODE=scheduler-only
+      
       # Scheduler configuration
       - SCHEDULER_ENABLED=true
       - SCHEDULER_TIMEZONE=America/Sao_Paulo
@@ -39,16 +78,15 @@ services:
       - SCHEDULER_SAUDE_INTERVAL=120
       
     restart: unless-stopped
-    ports:
-      - "5002:5001"
     depends_on:
       - postgres
+      - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/api/status"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://backend:5001/api/status')"]
+      interval: 60s
+      timeout: 15s
       retries: 3
-      start_period: 60s
+      start_period: 120s
 
   frontend:
     build:
@@ -62,7 +100,7 @@ services:
     ports:
       - "8080:3000"
 
-  # PostgreSQL local para migração
+  # PostgreSQL local
   postgres:
     image: postgres:15-alpine
     environment:
@@ -75,6 +113,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./migration/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:

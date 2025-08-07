@@ -31,9 +31,9 @@ if not POSTGRES_HOST or not POSTGRES_DB or not POSTGRES_USER or not POSTGRES_PAS
 # Inicializar o cliente PostgreSQL
 try:
     supabase = PostgreSQLClient()
-    print("✅ Conexão com PostgreSQL estabelecida com sucesso.")
+    print("Conexão com PostgreSQL estabelecida com sucesso.")
 except Exception as e:
-    print(f"⚠️ Erro ao conectar com o PostgreSQL: {str(e)}")
+    print(f"Erro ao conectar com o PostgreSQL: {str(e)}")
     print("Verifique se o PostgreSQL está rodando e as credenciais estão corretas.")
     exit(1)
 

@@ -1657,6 +1657,164 @@ def atualizar_precos_rtd(supabase, api_url="http://rtd.blackboxinovacao.com.br/a
     
     return stats    
 
+# =========================
+# Endpoints para controlar o Scheduler
+# =========================
+
+# Variável global para o scheduler
+scheduler_instance = None
+
+def get_scheduler():
+    """Obtém ou cria a instância do scheduler"""
+    global scheduler_instance
+    if scheduler_instance is None:
+        try:
+            from scheduler_atualizacao import SchedulerDados
+            scheduler_instance = SchedulerDados()
+        except ImportError as e:
+            print(f"⚠️ Erro ao importar scheduler: {e}")
+            return None
+    return scheduler_instance
+
+@app.route('/api/scheduler/status', methods=['GET'])
+def get_scheduler_status():
+    """Endpoint para obter status do scheduler"""
+    scheduler = get_scheduler()
+    
+    if not scheduler:
+        return jsonify({"erro": "Scheduler não disponível"}), 500
+    
+    try:
+        status = scheduler.get_status()
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/scheduler/start', methods=['POST'])
+def start_scheduler():
+    """Endpoint para iniciar o scheduler"""
+    scheduler = get_scheduler()
+    
+    if not scheduler:
+        return jsonify({"erro": "Scheduler não disponível"}), 500
+    
+    try:
+        scheduler.start()
+        return jsonify({
+            "mensagem": "Scheduler iniciado com sucesso",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/scheduler/stop', methods=['POST'])
+def stop_scheduler():
+    """Endpoint para parar o scheduler"""
+    scheduler = get_scheduler()
+    
+    if not scheduler:
+        return jsonify({"erro": "Scheduler não disponível"}), 500
+    
+    try:
+        scheduler.stop()
+        return jsonify({
+            "mensagem": "Scheduler parado com sucesso",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/scheduler/restart', methods=['POST'])
+def restart_scheduler():
+    """Endpoint para reiniciar o scheduler"""
+    scheduler = get_scheduler()
+    
+    if not scheduler:
+        return jsonify({"erro": "Scheduler não disponível"}), 500
+    
+    try:
+        scheduler.restart()
+        return jsonify({
+            "mensagem": "Scheduler reiniciado com sucesso",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/scheduler/execute/<job_name>', methods=['POST'])
+def execute_manual_job(job_name):
+    """Endpoint para executar um job manualmente"""
+    scheduler = get_scheduler()
+    
+    if not scheduler:
+        return jsonify({"erro": "Scheduler não disponível"}), 500
+    
+    try:
+        result = scheduler.executar_job_manual(job_name)
+        return jsonify({
+            "mensagem": result,
+            "job_name": job_name,
+            "timestamp": datetime.now().isoformat()
+        })
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/scheduler/jobs', methods=['GET'])
+def get_scheduled_jobs():
+    """Endpoint para listar todos os jobs agendados"""
+    scheduler = get_scheduler()
+    
+    if not scheduler:
+        return jsonify({"erro": "Scheduler não disponível"}), 500
+    
+    try:
+        if not scheduler.scheduler:
+            return jsonify({"jobs": [], "total": 0})
+        
+        jobs = []
+        for job in scheduler.scheduler.get_jobs():
+            jobs.append({
+                "id": job.id,
+                "name": job.name,
+                "next_run": job.next_run_time.isoformat() if job.next_run_time else None,
+                "trigger": str(job.trigger),
+                "args": list(job.args) if job.args else [],
+                "kwargs": dict(job.kwargs) if job.kwargs else {}
+            })
+        
+        return jsonify({
+            "jobs": jobs,
+            "total": len(jobs),
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+@app.route('/api/scheduler/logs', methods=['GET'])
+def get_scheduler_logs():
+    """Endpoint para obter logs do scheduler"""
+    try:
+        log_file = "scheduler_atualizacao.log"
+        lines = request.args.get('lines', default=100, type=int)
+        
+        if not os.path.exists(log_file):
+            return jsonify({"logs": [], "message": "Arquivo de log não encontrado"})
+        
+        with open(log_file, 'r', encoding='utf-8') as f:
+            all_lines = f.readlines()
+            recent_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+        
+        return jsonify({
+            "logs": recent_lines,
+            "total_lines": len(all_lines),
+            "showing": len(recent_lines),
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
 if __name__ == '__main__':
     print("\nIniciando servidor de API...\n")
     
@@ -1680,6 +1838,15 @@ if __name__ == '__main__':
     print("- GET /api/calculo/max-drawdown/<ticker>?periodo=5 - Máximo drawdown")
     print("- GET /api/calculo/sharpe/<ticker>?periodo=5 - Índice de Sharpe")
     print("- GET /api/calculo/resumo/<ticker>?periodo=5 - Resumo completo de um ativo")
-    print("- GET /api/calculo/resumo-varios?tickers=ticker1,ticker2&periodo=5 - Resumo de múltiplos ativos\n")
+    print("- GET /api/calculo/resumo-varios?tickers=ticker1,ticker2&periodo=5 - Resumo de múltiplos ativos")
+    
+    print("\nEndpoints do Scheduler:")
+    print("- GET /api/scheduler/status - Status do scheduler")
+    print("- POST /api/scheduler/start - Iniciar scheduler")
+    print("- POST /api/scheduler/stop - Parar scheduler") 
+    print("- POST /api/scheduler/restart - Reiniciar scheduler")
+    print("- POST /api/scheduler/execute/<job_name> - Executar job manualmente")
+    print("- GET /api/scheduler/jobs - Listar jobs agendados")
+    print("- GET /api/scheduler/logs?lines=100 - Ver logs do scheduler\n")
     
     app.run(debug=True, host='0.0.0.0', port=5002)

@@ -1,0 +1,116 @@
+{
+  "scheduler": {
+    "timezone": "America/Sao_Paulo",
+    "max_workers": 3,
+    "coalesce": false,
+    "misfire_grace_time": 300,
+    "log_file": "scheduler_atualizacao.log",
+    "log_level": "INFO"
+  },
+  "jobs": {
+    "atualizar_dados_yahoo": {
+      "enabled": true,
+      "description": "Atualização completa via Yahoo Finance",
+      "trigger": "cron",
+      "cron": {
+        "hour": 8,
+        "minute": 0,
+        "day_of_week": "mon-fri"
+      },
+      "max_instances": 1,
+      "timeout_minutes": 30
+    },
+    "atualizar_precos_rtd_comercial": {
+      "enabled": true,
+      "description": "Atualização de preços via RTD (horário comercial)",
+      "trigger": "cron",
+      "cron": {
+        "minute": "0,30",
+        "hour": "9-17",
+        "day_of_week": "mon-fri"
+      },
+      "max_instances": 1,
+      "timeout_minutes": 5
+    },
+    "atualizar_precos_rtd_noturno": {
+      "enabled": true,
+      "description": "Atualização de preços via RTD (fora horário comercial)",
+      "trigger": "cron",
+      "cron": {
+        "minute": 0,
+        "hour": "0-8,18-23"
+      },
+      "max_instances": 1,
+      "timeout_minutes": 5
+    },
+    "atualizar_precos_rtd_weekend": {
+      "enabled": true,
+      "description": "Atualização de preços via RTD (fins de semana)",
+      "trigger": "cron",
+      "cron": {
+        "minute": 0,
+        "hour": "*/3",
+        "day_of_week": "sat,sun"
+      },
+      "max_instances": 1,
+      "timeout_minutes": 5
+    },
+    "verificar_saude": {
+      "enabled": true,
+      "description": "Verificação de saúde dos dados",
+      "trigger": "interval",
+      "interval": {
+        "hours": 2
+      },
+      "max_instances": 1,
+      "timeout_minutes": 10
+    },
+    "limpeza_logs": {
+      "enabled": true,
+      "description": "Limpeza de logs antigos",
+      "trigger": "cron",
+      "cron": {
+        "hour": 2,
+        "minute": 0,
+        "day": "1"
+      },
+      "max_instances": 1,
+      "timeout_minutes": 10
+    }
+  },
+  "alertas": {
+    "enabled": true,
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "from_email": "",
+      "to_emails": []
+    },
+    "webhook": {
+      "enabled": false,
+      "url": "",
+      "headers": {}
+    },
+    "conditions": {
+      "job_failure": true,
+      "data_stale_hours": 48,
+      "consecutive_failures": 3
+    }
+  },
+  "maintenance": {
+    "log_retention_days": 30,
+    "auto_restart_on_error": true,
+    "health_check_interval_minutes": 5,
+    "backup_before_update": true
+  },
+  "performance": {
+    "batch_size": 100,
+    "retry_attempts": 3,
+    "retry_delay_seconds": 60,
+    "connection_timeout_seconds": 30,
+    "request_timeout_seconds": 120
+  }
+}
