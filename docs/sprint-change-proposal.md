@@ -17,5 +17,3 @@
     1.  **Handoff para o Arquiteto**: Entregar esta proposta ao Arquiteto para iniciar o novo design.
     2.  **Revisão da Arquitetura**: Você e eu revisaremos e aprovaremos o novo design do Arquiteto.
     3.  **Replanejamento do PRD**: Eu e você atualizaremos o PRD para refletir o novo plano.
-
----
