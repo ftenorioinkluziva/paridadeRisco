@@ -130,6 +130,12 @@ class PostgreSQLAdapter:
         if 'id' in data_copy:
             del data_copy['id']
         
+        # Converter dicionários para JSON para campos JSONB
+        for key, value in data_copy.items():
+            if isinstance(value, dict):
+                print(f"🔧 Convertendo campo {key} de dict para JSON: {value}")
+                data_copy[key] = json.dumps(value)
+        
         columns = ', '.join(data_copy.keys())
         placeholders = ', '.join(['%s'] * len(data_copy))
         values = list(data_copy.values())
@@ -151,6 +157,9 @@ class PostgreSQLAdapter:
             del data_copy['id']
         
         for key, value in data_copy.items():
+            # Converter dicionários para JSON para campos JSONB
+            if isinstance(value, dict):
+                value = json.dumps(value)
             set_clauses.append(f"{key} = %s")
             params.append(value)
         
@@ -264,6 +273,7 @@ class PostgreSQLTable:
     def insert(self, data):
         """Insere dados e retorna resultado"""
         try:
+            print(f"PostgreSQLTable.insert chamado para tabela {self.table_name} com dados: {data}")
             # Se data é uma lista, inserir múltiplos registros
             if isinstance(data, list):
                 results = []
@@ -276,11 +286,13 @@ class PostgreSQLTable:
                 result = self.adapter.insert(self.table_name, data)
                 return MockSupabaseResponse([result] if result else [])
         except Exception as e:
+            print(f"Erro no PostgreSQLTable.insert: {str(e)}")
             raise e
     
     def update(self, data):
         """Atualiza dados com as condições definidas"""
         try:
+            
             if not self._where_conditions:
                 raise Exception("Condições WHERE são obrigatórias para UPDATE")
             
@@ -414,6 +426,7 @@ class MockSupabaseResponse:
     
     def execute(self):
         """Simula o método execute do Supabase, retornando a si mesmo"""
+        print(f"MockSupabaseResponse.execute() chamado com {len(self.data) if self.data else 0} registros")
         return self
 
 class PostgreSQLClient:

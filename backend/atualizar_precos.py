@@ -234,7 +234,7 @@ class RTDUpdater:
             }
 
             # Realiza a atualização no banco de dados
-            response = self.supabase.table('ativos').update(update_data).eq('ticker', ticker).execute()
+            response = self.supabase.table('ativos').eq('ticker', ticker).update(update_data).execute()
 
             # Verifica se a atualização foi realizada com sucesso
             if response.data and len(response.data) > 0:

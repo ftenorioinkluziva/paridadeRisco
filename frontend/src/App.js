@@ -13,10 +13,15 @@ console.log("Using API URL:", API_URL);
 
 // Função para fazer chamadas API com fallback
 const apiCall = async (endpoint, options = {}) => {
+  // Adicionar cache busting para forçar dados frescos
+  const cacheBuster = `_t=${Date.now()}`;
+  const separator = endpoint.includes('?') ? '&' : '?';
+  const endpointWithCache = `${endpoint}${separator}${cacheBuster}`;
+  
   const urls = [
-    `${API_URL}${endpoint}`,
+    `${API_URL}${endpointWithCache}`,
     // Fallback para HTTP se HTTPS falhar
-    API_URL.includes('https://') ? `${API_URL.replace('https://', 'http://')}${endpoint}` : null
+    API_URL.includes('https://') ? `${API_URL.replace('https://', 'http://')}${endpointWithCache}` : null
   ].filter(Boolean);
   
   for (const url of urls) {
@@ -69,6 +74,9 @@ function App() {
 
   // Estado para controlar o gerenciador de cestas
   const [mostrarGerenciadorCestas, setMostrarGerenciadorCestas] = useState(false);
+
+  // Estado para forçar refresh dos dados
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Referência para o formulário de pesos da cesta
   const cestaFormRef = useRef(null);
@@ -430,8 +438,14 @@ function App() {
     };
 
     carregarDadosHistoricos();
-  }, [selecionados, periodoComparativo, customStartDate, customEndDate, isCustomDateRange, apiStatus, processarDadosHistoricos]);
+  }, [selecionados, periodoComparativo, customStartDate, customEndDate, isCustomDateRange, apiStatus, processarDadosHistoricos, refreshTrigger]);
   
+  // Função para forçar refresh dos dados
+  const forcarAtualizacao = () => {
+    console.log('🔄 Forçando atualização dos dados...');
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   // Manipular seleção/desseleção de ativos
   const handleSelecaoAtivo = (ticker) => {
     if (selecionados.includes(ticker)) {
@@ -673,9 +687,16 @@ function App() {
                   </button>
                   <button 
                     onClick={() => setMostrarGerenciadorCestas(true)}
-                    className="px-3 py-1 rounded text-sm bg-blue-500 text-white hover:bg-blue-600"
+                    className="px-3 py-1 rounded text-sm bg-blue-500 text-white hover:bg-blue-600 mr-2"
                   >
                     Gerenciar Cestas
+                  </button>
+                  <button 
+                    onClick={forcarAtualizacao}
+                    className="px-3 py-1 rounded text-sm bg-green-500 text-white hover:bg-green-600"
+                    disabled={carregando}
+                  >
+                    {carregando ? 'Carregando...' : '🔄 Atualizar Dados'}
                   </button>
                 </div>
               </div>

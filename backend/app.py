@@ -1,5 +1,7 @@
 from flask import Flask, jsonify, request
 from postgres_adapter import PostgreSQLClient
+
+print("DEBUG: app.py carregado - logs funcionando")
 import os
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -99,7 +101,7 @@ def after_request(response):
         # added by Flask-CORS. This ensures that only a single value is returned
         # for each CORS related header.
         response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With,Cache-Control,Pragma,Expires'
         response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Max-Age'] = '3600'
@@ -113,7 +115,7 @@ def handle_preflight():
         response = jsonify({'status': 'OK'})
         origin = request.headers.get('Origin', '*')
         response.headers['Access-Control-Allow-Origin'] = origin
-        response.headers['Access-Control-Allow-Headers'] = "Content-Type,Authorization,X-Requested-With"
+        response.headers['Access-Control-Allow-Headers'] = "Content-Type,Authorization,X-Requested-With,Cache-Control,Pragma,Expires"
         response.headers['Access-Control-Allow-Methods'] = "GET,PUT,POST,DELETE,OPTIONS"
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         return response
@@ -732,12 +734,14 @@ def obter_cesta(id):
 @app.route('/api/cesta', methods=['POST'])
 def criar_cesta():
     """Endpoint para criar uma nova cesta"""
+    print("🎯 Função criar_cesta chamada")
     if not supabase:
         return jsonify({"erro": "Conexão com PostgreSQL não estabelecida"}), 500
     
     try:
         # Obter dados da requisição
         dados = request.json
+        print(f"📥 Dados recebidos: {dados}")
         
         if not dados or not dados.get('nome') or not dados.get('ativos'):
             return jsonify({"erro": "Dados incompletos para criação da cesta"}), 400
@@ -807,7 +811,7 @@ def atualizar_cesta(id):
         dados['data_atualizacao'] = datetime.now().isoformat()
         
         # Atualizar cesta
-        response = supabase.table('cestas').update(dados).eq('id', id).execute()
+        response = supabase.table('cestas').eq('id', id).update(dados).execute()
         
         if response.data and len(response.data) > 0:
             return jsonify(response.data[0])
@@ -1251,7 +1255,7 @@ def update_investment_fund(fund_id):
         data['updated_at'] = datetime.now().isoformat()
         
         # Atualizar no banco de dados
-        response = supabase.table('investment_funds').update(data).eq('id', fund_id).execute()
+        response = supabase.table('investment_funds').eq('id', fund_id).update(data).execute()
         
         if response.data and len(response.data) > 0:
             return jsonify(response.data[0])
@@ -1340,7 +1344,7 @@ def update_cash_balance():
                 'last_update': datetime.now().isoformat()
             }
             
-            response = supabase.table('cash_balance').update(update_data).eq('id', check_response.data[0]['id']).execute()
+            response = supabase.table('cash_balance').eq('id', check_response.data[0]['id']).update(update_data).execute()
             
             if response.data and len(response.data) > 0:
                 return jsonify(response.data[0])
@@ -1604,7 +1608,7 @@ def atualizar_precos_rtd(supabase, api_url="http://rtd.blackboxinovacao.com.br/a
                         'data_atualizacao': datetime.now().isoformat()
                     }
                     
-                    supabase.table('ativos').update(update_data).eq('ticker', ticker_banco).execute()
+                    supabase.table('ativos').eq('ticker', ticker_banco).update(update_data).execute()
                     return True
                 except ValueError:
                     print(f"Valor não numérico recebido para {ticker_rtd}: {price_str}")
