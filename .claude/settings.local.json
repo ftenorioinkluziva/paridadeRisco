@@ -38,7 +38,17 @@
       "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" atualizar_dados.py)",
       "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" -m pip install psycopg2-binary)",
       "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" temp_fix.py)",
-      "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" -c \"from dateutil.relativedelta import relativedelta; print(''dateutil imported successfully'')\")"
+      "Bash(\"C:/Users/fteno/AppData/Local/Programs/Python/Python313/python.exe\" -c \"from dateutil.relativedelta import relativedelta; print(''dateutil imported successfully'')\")",
+      "Bash(npx create-t3-app:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm test)",
+      "Bash(npm run test:run:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/paridaderisco_t3\" npx prisma db push)",
+      "Bash(npm test:*)",
+      "Bash(npx shadcn:*)"
     ],
     "deny": []
   }
