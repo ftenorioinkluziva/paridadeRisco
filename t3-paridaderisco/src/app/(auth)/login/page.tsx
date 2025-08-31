@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,8 +20,8 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
 
   const {
@@ -34,21 +34,33 @@ export default function LoginPage() {
 
   const loginMutation = api.auth.login.useMutation({
     onSuccess: (result) => {
-      // Store token in localStorage (in production, consider more secure storage)
+      // Store token in localStorage and cookie
       localStorage.setItem("auth_token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
+      document.cookie = `auth_token=${result.token}; path=/; max-age=${24 * 60 * 60}`;
       
       // Redirect to dashboard
-      router.push("/dashboard");
+      window.location.replace("/dashboard");
     },
     onError: (error) => {
+      setIsLoggingIn(false);
       setError(error.message || "Erro no login. Verifique suas credenciais.");
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
+
+  const onSubmit = async (data: LoginFormData, event?: React.BaseSyntheticEvent) => {
+    // Prevent any form submission
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Prevent multiple submissions
+    if (isLoggingIn || loginMutation.isPending) return;
+    
     setError(null);
+    setIsLoggingIn(true);
     
     loginMutation.mutate(data);
   };
@@ -74,7 +86,10 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleSubmit(onSubmit)(e);
+            }} className="space-y-4">
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -110,11 +125,12 @@ export default function LoginPage() {
               )}
 
               <Button
-                type="submit"
+                type="button"
+                onClick={handleSubmit(onSubmit)}
                 className="w-full"
-                disabled={loginMutation.isPending}
+                disabled={isLoggingIn || loginMutation.isPending}
               >
-                {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                {isLoggingIn || loginMutation.isPending ? "Entrando..." : "Entrar"}
               </Button>
 
               <div className="text-center">

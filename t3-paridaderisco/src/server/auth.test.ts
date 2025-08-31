@@ -121,7 +121,7 @@ describe("NextAuth configuration", () => {
 
   describe("CredentialsProvider authorize function", () => {
     const credentialsProvider = authOptions.providers[0] as any;
-    const authorize = credentialsProvider?.authorize;
+    const authorize = credentialsProvider?.options?.authorize || credentialsProvider?.authorize;
 
     it("should authorize user with valid credentials", async () => {
       const credentials = {

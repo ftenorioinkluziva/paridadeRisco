@@ -111,4 +111,11 @@ export const authRouter = createTRPCRouter({
         token,
       };
     }),
+
+  logout: publicProcedure
+    .mutation(async () => {
+      // For JWT-based auth, logout is handled client-side by clearing the token
+      // This endpoint can be used for logging/analytics purposes
+      return { success: true };
+    }),
 });

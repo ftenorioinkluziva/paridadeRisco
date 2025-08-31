@@ -2,14 +2,40 @@
 
 import { Button } from "~/components/ui/button";
 import { User, LogOut } from "lucide-react";
+import { api } from "~/lib/api";
+import { useRouter } from "next/navigation";
 
 export function UserNav() {
+  const router = useRouter();
+  
   // TODO: Replace with actual auth session
   const user = { name: "User", email: "user@example.com" };
 
+  // Logout mutation
+  const logoutMutation = api.auth.logout.useMutation({
+    onSuccess: () => {
+      // Clear localStorage tokens and user data
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      
+      // Clear any cookies
+      document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      
+      // Redirect to home page and reload to clear all state
+      window.location.href = "/";
+    },
+    onError: (error) => {
+      console.error("Logout error:", error);
+      // Even if server logout fails, still clear client-side tokens
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = "/";
+    }
+  });
+
   const handleLogout = () => {
-    // TODO: Implement logout functionality
-    console.log("Logout clicked");
+    logoutMutation.mutate();
   };
 
   return (
@@ -22,10 +48,13 @@ export function UserNav() {
         variant="ghost"
         size="sm"
         onClick={handleLogout}
+        disabled={logoutMutation.isPending}
         className="text-muted-foreground hover:text-foreground"
       >
         <LogOut className="h-4 w-4" />
-        <span className="ml-1 hidden md:block">Sair</span>
+        <span className="ml-1 hidden md:block">
+          {logoutMutation.isPending ? "Saindo..." : "Sair"}
+        </span>
       </Button>
     </div>
   );

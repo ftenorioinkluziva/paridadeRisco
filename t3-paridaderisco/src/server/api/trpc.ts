@@ -35,8 +35,23 @@ const createInnerTRPCContext = (opts: CreateContextOptions) => {
 export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
   const { req } = opts;
 
-  // Get the session from the request header
-  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  // Get the session from the request header or cookie
+  let token = req.headers.get("authorization")?.replace("Bearer ", "");
+  
+  // If no token in header, try to get from cookies
+  if (!token) {
+    const cookieHeader = req.headers.get("cookie");
+    if (cookieHeader) {
+      const cookies = Object.fromEntries(
+        cookieHeader.split(';').map(cookie => {
+          const [name, value] = cookie.trim().split('=');
+          return [name, value];
+        })
+      );
+      token = cookies.auth_token;
+    }
+  }
+
   let session: { userId: string } | null = null;
 
   if (token) {
@@ -63,7 +78,6 @@ export const createTRPCContext = async (opts: FetchCreateContextFnOptions) => {
  */
 
 const t = initTRPC.context<typeof createTRPCContext>().create({
-  transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
       ...shape,

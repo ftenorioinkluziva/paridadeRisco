@@ -4,127 +4,99 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-ParidadeRisco is a financial risk parity dashboard with a Flask backend and React frontend. It tracks and analyzes Brazilian financial assets (ETFs, CDI, stocks) with automated data updates and portfolio management capabilities.
+ParidadeRisco is a financial risk parity dashboard built with the T3 Stack. It's a modern Next.js application that tracks and analyzes Brazilian financial assets (ETFs, CDI, stocks) with portfolio management capabilities.
 
 ## Architecture
 
-### Backend (Flask API)
-- **Main app**: `backend/app.py` - Flask API with PostgreSQL adapter
-- **Routes**: `backend/route.py` - API endpoints for financial calculations
-- **Data updates**: `backend/atualizar_dados.py` - Yahoo Finance and BCB data fetching
-- **Scheduler**: `backend/scheduler_docker.py` - APScheduler for automated updates
-- **Database**: PostgreSQL with adapter in `backend/postgres_adapter.py`
-- **Calculations**: `backend/calculos_financeiros.py` - Financial metrics (Sharpe, volatility, drawdown)
+### T3 Stack Application (Next.js Full-Stack)
+- **Framework**: Next.js 14 with App Router
+- **Frontend**: React 18 with TypeScript
+- **API Layer**: tRPC for end-to-end type safety
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js with Prisma adapter
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Testing**: Vitest (unit) and Playwright (e2e)
 
-### Frontend (React)
-- **Main app**: `frontend/src/App.js` - Dashboard with chart visualization using Recharts
-- **Components**: Portfolio management, basket composition, transaction tracking
-- **Context**: `frontend/src/contexts/PortfolioContext.js` - Portfolio state management
-- **API config**: `frontend/src/config/api.js` - Backend connection settings
+### Key Architecture Components
+- **API Routes**: tRPC routers in `src/server/api/routers/` (auth, asset, portfolio, cesta)
+- **Database Schema**: Prisma schema with User, Portfolio, Ativo, Cesta, Transacao models
+- **UI Components**: shadcn/ui based components in `src/components/ui/`
+- **Layout**: Header navigation with theme toggle and user management
+- **Services**: Financial data fetcher service in `src/server/services/`
 
-### Database
-- PostgreSQL with schema in `migration/init.sql`
-- Tables: ativos, dados_historicos, cestas, transacoes, investment_funds, cash_balance
+### Database Model Structure
+Core entities and relationships:
+- **User** → **Portfolio** (1:1) for cash balance tracking
+- **User** → **Cesta** (1:many) for custom asset baskets
+- **Cesta** ↔ **Ativo** (many:many) via AtivosEmCestas with target percentages
+- **Ativo** → **DadoHistorico** (1:many) for price/percentage data
+- **User** → **Transacao** (1:many) for buy/sell transactions
 
 ## Development Commands
 
-### Using Docker (Recommended)
-```bash
-# Start all services (backend, frontend, postgres)
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Rebuild services
-docker-compose build --no-cache
-```
-
-### Backend Development
-```bash
-# Install Python dependencies
-pip install -r backend/requirements.txt
-
-# Run Flask development server
-cd backend
-python app.py
-
-# Run data updates manually
-python atualizar_dados.py
-
-# Test database connection
-python test_postgres.py
-```
-
-### Frontend Development
+### Essential Commands
 ```bash
 # Install dependencies
-cd frontend
 npm install
 
 # Start development server
-npm start
+npm run dev
 
 # Build for production
 npm run build
 
-# Run tests
+# Start production server
+npm start
+
+# Database commands
+npm run db:push      # Push schema to database
+npm run db:studio    # Open Prisma Studio
+npm run db:migrate   # Run database migrations
+```
+
+### Testing
+```bash
+# Run unit tests
 npm test
+npm run test:run     # Run once without watch
+
+# Run e2e tests
+npm run test:e2e
+npm run test:e2e:ui  # With Playwright UI
+
+# Run all tests
+npm run test:all
+```
+
+### Code Quality
+```bash
+# Lint code
+npm run lint
+
+# Generate Prisma client (runs automatically on install)
+npm run postinstall
 ```
 
 ## Environment Setup
 
-Copy `.env.example` to `.env` and configure:
-```
-SUPABASE_URL=your_supabase_url_here
-SUPABASE_KEY=your_supabase_anon_key_here
-FLASK_ENV=development
-REACT_APP_API_URL=http://localhost:5002/api
-```
-
-## Service URLs
-
-- **Frontend**: http://localhost:8080 (Docker) or http://localhost:3000 (dev)
-- **Backend API**: http://localhost:5002/api (Docker) or http://localhost:5001/api (dev)
-- **PostgreSQL**: localhost:5432 (Docker) or localhost:5433
-
-## Scheduler System
-
-The application includes an integrated APScheduler for automated data updates:
-- **08:00 daily**: Complete Yahoo Finance data update
-- **Every 2 hours**: Health check verification
-- RTD price updates (disabled by default)
-
-Check scheduler status: `curl http://localhost:5002/api/scheduler/integrated/status`
-
-## Key Financial Calculations
-
-The system calculates standard financial metrics:
-- Risk parity portfolio optimization
-- Sharpe ratio, volatility, maximum drawdown
-- Cumulative and annualized returns
-- Moving averages and Bollinger bands
-
-## Database Migration
-
-Migration scripts are in `/migration/`:
-```bash
-# Setup database schema
-python migration/create_schema.py
-
-# Import historical data
-python migration/insert_data.py
+Create `.env` file with required variables:
+```env
+DATABASE_URL="postgresql://..."
+NEXTAUTH_SECRET="your-secret"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
-## Testing
+## Development Server URLs
 
-Backend tests focus on API endpoints and database connections:
-```bash
-python backend/test_api.py
-python backend/test_postgres.py
-```
+- **Application**: http://localhost:3000
+- **Prisma Studio**: Available via `npm run db:studio`
 
-Frontend uses React Testing Library (standard CRA setup).
+## tRPC API Structure
+
+The API is organized into these routers:
+- `auth`: User authentication and registration
+- `asset`: Asset management and historical data
+- `portfolio`: Portfolio operations and cash balance
+- `cesta`: Basket creation and asset allocation
+
+Access via tRPC client in components or use direct API routes at `/api/trpc/[trpc]`

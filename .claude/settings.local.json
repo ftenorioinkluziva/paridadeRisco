@@ -48,7 +48,14 @@
       "Bash(npm run test:run:*)",
       "Bash(DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/paridaderisco_t3\" npx prisma db push)",
       "Bash(npm test:*)",
-      "Bash(npx shadcn:*)"
+      "Bash(npx shadcn:*)",
+      "Bash(grep:*)",
+      "Bash(npm run dev)",
+      "Bash(npm run:*)",
+      "Bash(node:*)",
+      "Bash(tasklist:*)",
+      "Bash(npx next lint:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   }
