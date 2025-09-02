@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "~/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -14,21 +14,23 @@ import {
   BarChart3,
   ArrowUpDown,
   Plus,
-  Minus
+  Minus,
+  PiggyBank
 } from "lucide-react";
+import { FundManager } from "~/features/funds/FundManager";
+import { TransactionManager } from "~/features/transactions/TransactionManager";
 
 export function PortfolioManager() {
   const [selectedTab, setSelectedTab] = useState("overview");
   
   const portfolioQuery = api.portfolio.get.useQuery();
-  const transactionsQuery = api.portfolio.listTransactions.useQuery({
-    limit: 10,
-    offset: 0,
-  });
+  const fundStatsQuery = api.fundo.getStats.useQuery();
+  const fundListQuery = api.fundo.list.useQuery();
   
   const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
   const [rebalanceData, setRebalanceData] = useState<any>(null);
   const [isLoadingRebalance, setIsLoadingRebalance] = useState(false);
+  const [includeCashInBase, setIncludeCashInBase] = useState(true);
   
   const rebalanceMutation = api.portfolio.getRebalancePlan.useMutation({
     onSuccess: (data) => {
@@ -53,10 +55,18 @@ export function PortfolioManager() {
     rebalanceMutation.mutate({
       cestaId,
       targetAmount,
+      includeCashInBase,
     });
   };
   
   const cestasQuery = api.cesta.list.useQuery();
+  
+  // Recalculate when cash inclusion setting changes
+  useEffect(() => {
+    if (selectedBasketId) {
+      calculateRebalancePlan(selectedBasketId);
+    }
+  }, [includeCashInBase]);
 
   if (portfolioQuery.isLoading) {
     return (
@@ -100,11 +110,18 @@ export function PortfolioManager() {
     return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
   };
 
-  const totalValue = Number(portfolioData.totalValue);
+  const fundStats = fundStatsQuery.data;
+  const fundsValue = fundStats?.valorAtual || 0;
+  const fundsGain = fundStats?.ganhoPerda || 0;
+  
+  const totalValue = Number(portfolioData.totalValue) + fundsValue;
   const cashBalance = Number(portfolioData.cashBalance);
   const positionsValue = portfolioData.positions.reduce((sum, pos) => sum + pos.currentValue, 0);
   const totalCost = portfolioData.positions.reduce((sum, pos) => sum + pos.totalCost, 0);
-  const totalGain = positionsValue - totalCost;
+  const totalGain = positionsValue - totalCost + fundsGain;
+  
+  // Calculate total allocation base (positions + funds)
+  const totalAllocationValue = positionsValue + fundsValue;
 
   return (
     <div className="space-y-6">
@@ -137,7 +154,7 @@ export function PortfolioManager() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalValue)}</div>
             <p className="text-xs text-muted-foreground">
-              Portfolio + Caixa
+              Portfolio + Fundos + Caixa
             </p>
           </CardContent>
         </Card>
@@ -195,6 +212,7 @@ export function PortfolioManager() {
         <TabsList>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="positions">Posições</TabsTrigger>
+          <TabsTrigger value="funds">Fundos</TabsTrigger>
           <TabsTrigger value="transactions">Transações</TabsTrigger>
           <TabsTrigger value="rebalance">Rebalanceamento</TabsTrigger>
           <TabsTrigger value="performance">Performance</TabsTrigger>
@@ -211,8 +229,9 @@ export function PortfolioManager() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
+                  {/* Stock Positions */}
                   {portfolioData.positions.map((position) => {
-                    const allocation = positionsValue > 0 ? (position.currentValue / positionsValue) * 100 : 0;
+                    const allocation = totalAllocationValue > 0 ? (position.currentValue / totalAllocationValue) * 100 : 0;
                     return (
                       <div key={position.ativo.id} className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -245,6 +264,47 @@ export function PortfolioManager() {
                       </div>
                     );
                   })}
+                  
+                  {/* Fund Positions */}
+                  {fundListQuery.data?.map((fund) => {
+                    const allocation = totalAllocationValue > 0 ? (fund.currentValue / totalAllocationValue) * 100 : 0;
+                    return (
+                      <div key={`fund-${fund.id}`} className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                          <PiggyBank className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">
+                              {fund.name.length > 20 ? fund.name.substring(0, 20) + '...' : fund.name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {allocation.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full" 
+                              style={{ width: `${allocation}%` }}
+                            />
+                          </div>
+                          {fund.indice && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Vinculado: {fund.indice.ticker}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">{formatCurrency(fund.currentValue)}</div>
+                          <div className={`text-sm ${
+                            fund.ganhoPerda >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {formatCurrency(fund.ganhoPerda)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }) ?? []}
                 </div>
               </CardContent>
             </Card>
@@ -265,6 +325,10 @@ export function PortfolioManager() {
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="font-medium">Valor Atual das Posições</span>
                     <span className="font-bold">{formatCurrency(positionsValue)}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="font-medium">Valor dos Fundos</span>
+                    <span className="font-bold">{formatCurrency(fundsValue)}</span>
                   </div>
                   <div className={`flex items-center justify-between p-3 rounded-lg ${
                     totalGain >= 0 ? 'bg-green-50' : 'bg-red-50'
@@ -338,94 +402,81 @@ export function PortfolioManager() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="funds" className="space-y-4">
+          <FundManager />
+        </TabsContent>
+
         <TabsContent value="transactions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Transações</CardTitle>
-              <CardDescription>
-                Últimas transações realizadas
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {transactionsQuery.isLoading ? (
-                <div className="flex justify-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : transactionsQuery.error ? (
-                <div className="text-center p-8">
-                  <p className="text-red-600 mb-2">Erro ao carregar transações</p>
-                  <Button onClick={() => transactionsQuery.refetch()}>
-                    Tentar Novamente
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {transactionsQuery.data?.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Badge variant={transaction.type === "COMPRA" ? "default" : "secondary"}>
-                          {transaction.type}
-                        </Badge>
-                        <div>
-                          <div className="font-medium">{transaction.ativo.ticker}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {Number(transaction.shares)} ações @ {formatCurrency(Number(transaction.pricePerShare))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold">
-                          {formatCurrency(Number(transaction.shares) * Number(transaction.pricePerShare))}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {formatDate(transaction.date)}
-                        </div>
-                      </div>
-                    </div>
-                  )) ?? <div className="text-center p-8 text-muted-foreground">Nenhuma transação encontrada</div>}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <TransactionManager />
         </TabsContent>
 
         <TabsContent value="rebalance" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Selecionar Cesta</CardTitle>
+                <CardTitle>Configuração de Rebalanceamento</CardTitle>
                 <CardDescription>
-                  Escolha uma cesta para ver as recomendações de rebalanceamento
+                  Escolha uma cesta e configure os parâmetros do rebalanceamento
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {cestasQuery.isLoading ? (
-                  <div className="flex justify-center p-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                {/* Cash Inclusion Toggle */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="includeCash"
+                      checked={includeCashInBase}
+                      onChange={(e) => setIncludeCashInBase(e.target.checked)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="includeCash" className="font-medium text-sm">
+                      Incluir caixa na base de cálculo
+                    </label>
                   </div>
-                ) : cestasQuery.error ? (
-                  <p className="text-red-600 text-center">Erro ao carregar cestas</p>
-                ) : (
-                  <div className="space-y-2">
-                    {cestasQuery.data?.map((cesta) => (
-                      <div 
-                        key={cesta.id}
-                        className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                          selectedBasketId === cesta.id ? 'border-primary bg-primary/5' : ''
-                        }`}
-                        onClick={() => {
-                          setSelectedBasketId(cesta.id);
-                          calculateRebalancePlan(cesta.id);
-                        }}
-                      >
-                        <div className="font-medium">{cesta.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {cesta.ativos?.length || 0} ativos
+                  <p className="text-xs text-gray-600 mt-1 ml-7">
+                    {includeCashInBase 
+                      ? 'Percentuais calculados sobre: Posições + Fundos + Caixa'
+                      : 'Percentuais calculados sobre: Posições + Fundos (sem caixa)'
+                    }
+                  </p>
+                  <div className="text-xs text-gray-500 mt-2 ml-7">
+                    <div>• Valor investido: {formatCurrency(positionsValue + fundsValue)}</div>
+                    <div>• Caixa disponível: {formatCurrency(cashBalance)}</div>
+                    <div className="font-semibold">• Base de cálculo: {formatCurrency(includeCashInBase ? positionsValue + fundsValue + cashBalance : positionsValue + fundsValue)}</div>
+                  </div>
+                </div>
+                {/* Basket Selection */}
+                <div>
+                  <h4 className="font-semibold mb-2">Selecionar Cesta:</h4>
+                  {cestasQuery.isLoading ? (
+                    <div className="flex justify-center p-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : cestasQuery.error ? (
+                    <p className="text-red-600 text-center">Erro ao carregar cestas</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {cestasQuery.data?.map((cesta) => (
+                        <div 
+                          key={cesta.id}
+                          className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                            selectedBasketId === cesta.id ? 'border-primary bg-primary/5' : ''
+                          }`}
+                          onClick={() => {
+                            setSelectedBasketId(cesta.id);
+                            calculateRebalancePlan(cesta.id);
+                          }}
+                        >
+                          <div className="font-medium">{cesta.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {cesta.ativos?.length || 0} ativos
+                          </div>
                         </div>
-                      </div>
-                    )) ?? <p className="text-center text-muted-foreground">Nenhuma cesta encontrada</p>}
-                  </div>
-                )}
+                      )) ?? <p className="text-center text-muted-foreground">Nenhuma cesta encontrada</p>}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -456,6 +507,30 @@ export function PortfolioManager() {
                 ) : rebalanceData ? (
                   <div className="space-y-4">
                     <div className="p-3 bg-blue-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">
+                          {rebalanceData.includeCashInBase ? 'Valor Total (com caixa)' : 'Valor Investido'}
+                        </span>
+                        <span className="font-bold text-blue-600">
+                          {formatCurrency(rebalanceData.currentPortfolioValue || 0)}
+                        </span>
+                      </div>
+                      {rebalanceData.includeCashInBase && (
+                        <div className="flex items-center justify-between mb-2 text-sm">
+                          <span className="text-gray-600">• Valor Investido:</span>
+                          <span className="font-medium">
+                            {formatCurrency(rebalanceData.currentInvestedValue || 0)}
+                          </span>
+                        </div>
+                      )}
+                      {rebalanceData.includeCashInBase && (
+                        <div className="flex items-center justify-between mb-2 text-sm">
+                          <span className="text-gray-600">• Caixa Disponível:</span>
+                          <span className="font-medium">
+                            {formatCurrency(rebalanceData.currentCashBalance || 0)}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Custo Estimado</span>
                         <span className="font-bold text-blue-600">
@@ -477,13 +552,16 @@ export function PortfolioManager() {
                       {rebalanceData.suggestions.map((suggestion: any, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <Badge variant={suggestion.action === 'BUY' ? 'default' : 'secondary'}>
-                              {suggestion.action === 'BUY' ? 'COMPRAR' : 'VENDER'}
+                            <Badge variant={suggestion.action === 'COMPRA' ? 'default' : 'secondary'}>
+                              {suggestion.action === 'COMPRA' ? 'COMPRAR' : 'VENDER'}
                             </Badge>
                             <div>
-                              <div className="font-medium">{suggestion.ticker}</div>
+                              <div className="font-medium">{suggestion.ativo.ticker}</div>
                               <div className="text-sm text-muted-foreground">
-                                {suggestion.shares} ações
+                                {Math.abs(suggestion.shareDifference)} ações
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Atual: {suggestion.currentPercent?.toFixed(1)}% → Target: {suggestion.targetPercentage?.toFixed(1)}%
                               </div>
                             </div>
                           </div>
@@ -492,7 +570,7 @@ export function PortfolioManager() {
                               {formatCurrency(suggestion.estimatedCost)}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              Target: {suggestion.targetAllocation.toFixed(1)}%
+                              Diferença: {formatCurrency(Math.abs(suggestion.valueDifference || 0))}
                             </div>
                           </div>
                         </div>
@@ -516,11 +594,11 @@ export function PortfolioManager() {
         </TabsContent>
 
         <TabsContent value="performance" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
-                <CardTitle>Melhores Performers</CardTitle>
-                <CardDescription>Ativos com melhor performance</CardDescription>
+                <CardTitle>Melhores Ativos</CardTitle>
+                <CardDescription>Top performers em ações</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -545,8 +623,8 @@ export function PortfolioManager() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Piores Performers</CardTitle>
-                <CardDescription>Ativos que precisam de atenção</CardDescription>
+                <CardTitle>Piores Ativos</CardTitle>
+                <CardDescription>Ações que precisam atenção</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -564,6 +642,58 @@ export function PortfolioManager() {
                     ))}
                   {portfolioData.positions.filter(pos => pos.unrealizedGain < 0).length === 0 && (
                     <p className="text-center text-muted-foreground">Nenhum ativo com perda</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Melhores Fundos</CardTitle>
+                <CardDescription>Fundos com maior rentabilidade</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {fundListQuery.data
+                    ?.filter(fund => fund.ganhoPerda > 0)
+                    .sort((a, b) => b.ganhoPerda - a.ganhoPerda)
+                    .slice(0, 5)
+                    .map((fund) => (
+                      <div key={fund.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                        <span className="font-medium text-xs">{fund.name.substring(0, 12)}...</span>
+                        <span className="font-bold text-green-600 text-xs">
+                          {formatCurrency(fund.ganhoPerda)}
+                        </span>
+                      </div>
+                    )) || []}
+                  {(!fundListQuery.data || fundListQuery.data.filter(fund => fund.ganhoPerda > 0).length === 0) && (
+                    <p className="text-center text-muted-foreground text-xs">Nenhum fundo com ganho</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Piores Fundos</CardTitle>
+                <CardDescription>Fundos que precisam atenção</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {fundListQuery.data
+                    ?.filter(fund => fund.ganhoPerda < 0)
+                    .sort((a, b) => a.ganhoPerda - b.ganhoPerda)
+                    .slice(0, 5)
+                    .map((fund) => (
+                      <div key={fund.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                        <span className="font-medium text-xs">{fund.name.substring(0, 12)}...</span>
+                        <span className="font-bold text-red-600 text-xs">
+                          {formatCurrency(fund.ganhoPerda)}
+                        </span>
+                      </div>
+                    )) || []}
+                  {(!fundListQuery.data || fundListQuery.data.filter(fund => fund.ganhoPerda < 0).length === 0) && (
+                    <p className="text-center text-muted-foreground text-xs">Nenhum fundo com perda</p>
                   )}
                 </div>
               </CardContent>

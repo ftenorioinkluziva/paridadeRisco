@@ -34,6 +34,7 @@ export const portfolioRouter = createTRPCRouter({
           },
         },
       },
+      orderBy: { date: "asc" },
     });
 
     // Calculate current positions
@@ -89,6 +90,9 @@ export const portfolioRouter = createTRPCRouter({
             totalCost: newTotalCost,
             unrealizedGain: newShares * (currentPrice - newAveragePrice),
           });
+        } else {
+          // newShares < 0 - Venda excedeu posição atual, zerar posição
+          positionsMap.delete(key);
         }
       }
     }
@@ -111,7 +115,11 @@ export const portfolioRouter = createTRPCRouter({
         type: z.nativeEnum(TransactionType),
         shares: z.number().positive(),
         pricePerShare: z.number().positive(),
-        date: z.date().optional(),
+        date: z.union([z.date(), z.string()]).optional().transform((val) => {
+          if (!val) return new Date();
+          if (typeof val === 'string') return new Date(val);
+          return val;
+        }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -198,6 +206,7 @@ export const portfolioRouter = createTRPCRouter({
       z.object({
         cestaId: z.string(),
         targetAmount: z.number().positive(),
+        includeCashInBase: z.boolean().optional().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -250,7 +259,27 @@ export const portfolioRouter = createTRPCRouter({
         include: { ativo: true },
       });
 
+      // Get funds associated with indices
+      const fundos = await ctx.prisma.fundoInvestimento.findMany({
+        where: { 
+          userId,
+          indiceId: { not: null },
+        },
+        include: { 
+          indice: {
+            include: {
+              dadosHistoricos: {
+                orderBy: { date: "desc" },
+                take: 1,
+              },
+            },
+          },
+        },
+      });
+
       const currentPositions = new Map<string, number>();
+      
+      // Calculate positions from direct stock transactions
       for (const transaction of transactions) {
         const current = currentPositions.get(transaction.ativoId) || 0;
         const shares = Number(transaction.shares);
@@ -258,7 +287,51 @@ export const portfolioRouter = createTRPCRouter({
         currentPositions.set(transaction.ativoId, newShares);
       }
 
-      // Calculate target positions
+      // Add fund values as equivalent positions in their associated indices
+      for (const fundo of fundos) {
+        if (fundo.indice) {
+          const currentPrice = Number(fundo.indice.dadosHistoricos[0]?.price || 0);
+          if (currentPrice > 0) {
+            const equivalentShares = Number(fundo.currentValue) / currentPrice;
+            const current = currentPositions.get(fundo.indiceId!) || 0;
+            currentPositions.set(fundo.indiceId!, current + equivalentShares);
+          }
+        }
+      }
+
+      // Calculate current portfolio value
+      let currentInvestedValue = 0;
+      const currentPositionValues = new Map<string, number>();
+      
+      // Calculate stock positions value
+      for (const [ativoId, shares] of currentPositions.entries()) {
+        if (shares > 0) {
+          const ativo = await ctx.prisma.ativo.findUnique({
+            where: { id: ativoId },
+            include: {
+              dadosHistoricos: {
+                orderBy: { date: "desc" },
+                take: 1,
+              },
+            },
+          });
+          
+          if (ativo && ativo.dadosHistoricos[0]) {
+            const currentPrice = Number(ativo.dadosHistoricos[0].price);
+            const positionValue = shares * currentPrice;
+            currentInvestedValue += positionValue;
+            currentPositionValues.set(ativoId, positionValue);
+          }
+        }
+      }
+      
+      // Calculate base value for rebalancing (with or without cash)
+      const cashBalance = Number(portfolio.cashBalance);
+      const currentPortfolioValue = input.includeCashInBase 
+        ? currentInvestedValue + cashBalance
+        : currentInvestedValue;
+
+      // Calculate target positions based on current portfolio value
       const rebalanceSuggestions = [];
       
       for (const ativoEmCesta of cesta.ativos) {
@@ -269,12 +342,16 @@ export const portfolioRouter = createTRPCRouter({
           continue; // Skip assets without current price
         }
 
-        const targetValue = (input.targetAmount * Number(targetPercentage)) / 100;
+        const currentValue = currentPositionValues.get(ativo.id) || 0;
+        const targetValue = (currentPortfolioValue * Number(targetPercentage)) / 100;
+        const currentPercent = currentInvestedValue > 0 ? (currentValue / currentInvestedValue) * 100 : 0;
         const targetShares = Math.floor(targetValue / currentPrice);
         const currentShares = currentPositions.get(ativo.id) || 0;
         const shareDifference = targetShares - currentShares;
+        const valueDifference = targetValue - currentValue;
 
-        if (Math.abs(shareDifference) > 0) {
+        // Only suggest rebalancing if difference is significant (> 1% or > R$ 100)
+        if (Math.abs(shareDifference) > 0 && (Math.abs(currentPercent - Number(targetPercentage)) > 1 || Math.abs(valueDifference) > 100)) {
           rebalanceSuggestions.push({
             ativo: {
               id: ativo.id,
@@ -283,10 +360,14 @@ export const portfolioRouter = createTRPCRouter({
               currentPrice,
             },
             currentShares,
+            currentValue,
+            currentPercent,
             targetShares,
+            targetValue,
             shareDifference,
+            valueDifference,
             action: shareDifference > 0 ? TransactionType.COMPRA : TransactionType.VENDA,
-            estimatedCost: Math.abs(shareDifference * currentPrice),
+            estimatedCost: Math.abs(valueDifference),
             targetPercentage: Number(targetPercentage),
           });
         }
@@ -301,13 +382,44 @@ export const portfolioRouter = createTRPCRouter({
         cestaId: input.cestaId,
         cestaName: cesta.name,
         targetAmount: input.targetAmount,
-        currentCashBalance: Number(portfolio.cashBalance),
+        currentInvestedValue,
+        currentPortfolioValue,
+        includeCashInBase: input.includeCashInBase,
+        currentCashBalance: cashBalance,
         totalEstimatedCost,
-        cashAfterRebalance: Number(portfolio.cashBalance) - totalEstimatedCost + 
+        cashAfterRebalance: cashBalance - totalEstimatedCost + 
           rebalanceSuggestions.reduce((sum, suggestion) => 
             sum + (suggestion.action === TransactionType.VENDA ? suggestion.estimatedCost : 0), 0
           ),
         suggestions: rebalanceSuggestions,
+      };
+    }),
+
+  updateCashBalance: protectedProcedure
+    .input(
+      z.object({
+        cashBalance: z.number().min(0, "Saldo deve ser positivo"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userId } = ctx.session;
+
+      // Update or create portfolio with new cash balance
+      const portfolio = await ctx.prisma.portfolio.upsert({
+        where: { userId },
+        create: {
+          userId,
+          cashBalance: input.cashBalance,
+        },
+        update: {
+          cashBalance: input.cashBalance,
+        },
+      });
+
+      return {
+        id: portfolio.id,
+        cashBalance: Number(portfolio.cashBalance),
+        success: true,
       };
     }),
 });

@@ -55,7 +55,8 @@
       "Bash(node:*)",
       "Bash(tasklist:*)",
       "Bash(npx next lint:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": []
   }

@@ -11,13 +11,14 @@ import {
   ShoppingCart,
   User,
   LogOut,
+  Settings,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Portfolio", href: "/portfolio", icon: Briefcase },
-  { name: "Transactions", href: "/transactions", icon: TrendingUp },
   { name: "Baskets", href: "/baskets", icon: ShoppingCart },
+  { name: "Admin", href: "/admin", icon: Settings },
 ] as const;
 
 interface MainNavProps {

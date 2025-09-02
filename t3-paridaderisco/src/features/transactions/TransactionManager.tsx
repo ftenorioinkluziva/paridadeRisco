@@ -36,6 +36,9 @@ export function TransactionManager() {
   const [selectedTab, setSelectedTab] = useState("add");
   const [selectedAsset, setSelectedAsset] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showUpdateCashModal, setShowUpdateCashModal] = useState(false);
+  const [newCashBalance, setNewCashBalance] = useState<string>("");
+  const [historyFilterAsset, setHistoryFilterAsset] = useState<string>("");
 
   // API queries
   const portfolioQuery = api.portfolio.get.useQuery();
@@ -43,6 +46,7 @@ export function TransactionManager() {
   const transactionsQuery = api.portfolio.listTransactions.useQuery({
     limit: 50,
     offset: 0,
+    ativoId: historyFilterAsset || undefined,
   });
 
   // Form setup
@@ -75,6 +79,16 @@ export function TransactionManager() {
     },
   });
 
+  // Cash balance update mutation
+  const updateCashMutation = api.portfolio.updateCashBalance.useMutation({
+    onSuccess: () => {
+      setShowUpdateCashModal(false);
+      setNewCashBalance("");
+      // Refetch portfolio data
+      portfolioQuery.refetch();
+    },
+  });
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -98,7 +112,16 @@ export function TransactionManager() {
       type: data.type,
       shares: data.shares,
       pricePerShare: data.pricePerShare,
-      date: data.date ? new Date(data.date) : undefined,
+      date: data.date || undefined,
+    });
+  };
+
+  const handleUpdateCashBalance = () => {
+    const balance = parseFloat(newCashBalance);
+    if (isNaN(balance) || balance < 0) return;
+    
+    updateCashMutation.mutate({
+      cashBalance: balance,
     });
   };
 
@@ -136,14 +159,26 @@ export function TransactionManager() {
       {/* Cash Balance Alert */}
       <Card className="border-blue-200 bg-blue-50">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
-            <DollarSign className="h-8 w-8 text-blue-600" />
-            <div>
-              <h3 className="font-semibold text-blue-900">Saldo Disponível</h3>
-              <p className="text-2xl font-bold text-blue-600">
-                {formatCurrency(currentCashBalance)}
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <DollarSign className="h-8 w-8 text-blue-600" />
+              <div>
+                <h3 className="font-semibold text-blue-900">Saldo Disponível</h3>
+                <p className="text-2xl font-bold text-blue-600">
+                  {formatCurrency(currentCashBalance)}
+                </p>
+              </div>
             </div>
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setNewCashBalance(currentCashBalance.toString());
+                setShowUpdateCashModal(true);
+              }}
+              className="text-blue-600 border-blue-300 hover:bg-blue-100"
+            >
+              Atualizar
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -357,6 +392,36 @@ export function TransactionManager() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Filter by Asset */}
+              <div className="mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-1">
+                    <Label htmlFor="assetFilter">Filtrar por Ativo</Label>
+                    <select
+                      id="assetFilter"
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                      value={historyFilterAsset}
+                      onChange={(e) => setHistoryFilterAsset(e.target.value)}
+                    >
+                      <option value="">Todos os ativos</option>
+                      {assetsQuery.data?.map((asset) => (
+                        <option key={asset.id} value={asset.id}>
+                          {asset.ticker} - {asset.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {historyFilterAsset && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setHistoryFilterAsset("")}
+                      className="mt-6"
+                    >
+                      Limpar Filtro
+                    </Button>
+                  )}
+                </div>
+              </div>
               {transactionsQuery.isLoading ? (
                 <div className="flex justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -416,38 +481,49 @@ export function TransactionManager() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                      <span className="font-medium">Total Compras</span>
-                    </div>
-                    <span className="font-bold text-green-600">
-                      {transactionsQuery.data?.filter(t => t.type === "COMPRA").length || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <TrendingDown className="h-5 w-5 text-red-600" />
-                      <span className="font-medium">Total Vendas</span>
-                    </div>
-                    <span className="font-bold text-red-600">
-                      {transactionsQuery.data?.filter(t => t.type === "VENDA").length || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="h-5 w-5 text-blue-600" />
-                      <span className="font-medium">Volume Total</span>
-                    </div>
-                    <span className="font-bold text-blue-600">
-                      {formatCurrency(
-                        transactionsQuery.data?.reduce(
-                          (sum, t) => sum + (Number(t.shares) * Number(t.pricePerShare)),
-                          0
-                        ) || 0
-                      )}
-                    </span>
-                  </div>
+                  {(() => {
+                    const transactions = transactionsQuery.data || [];
+                    const compras = transactions.filter(t => t.type === "COMPRA");
+                    const vendas = transactions.filter(t => t.type === "VENDA");
+                    
+                    const volumeCompras = compras.reduce((sum, t) => sum + (Number(t.shares) * Number(t.pricePerShare)), 0);
+                    const volumeVendas = vendas.reduce((sum, t) => sum + (Number(t.shares) * Number(t.pricePerShare)), 0);
+                    const volumeTotal = volumeCompras + volumeVendas;
+                    
+                    return (
+                      <>
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="h-5 w-5 text-green-600" />
+                            <span className="font-medium">Total Compras</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-green-600">{compras.length}</div>
+                            <div className="text-sm text-green-600">{formatCurrency(volumeCompras)}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <TrendingDown className="h-5 w-5 text-red-600" />
+                            <span className="font-medium">Total Vendas</span>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-red-600">{vendas.length}</div>
+                            <div className="text-sm text-red-600">{formatCurrency(volumeVendas)}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="h-5 w-5 text-blue-600" />
+                            <span className="font-medium">Volume Total</span>
+                          </div>
+                          <span className="font-bold text-blue-600">
+                            {formatCurrency(volumeTotal)}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()} 
                 </div>
               </CardContent>
             </Card>
@@ -459,16 +535,255 @@ export function TransactionManager() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {/* This would be calculated from transaction data */}
-                  <div className="text-center text-muted-foreground p-4">
-                    Dados de análise serão exibidos aqui após mais transações
-                  </div>
+                  {(() => {
+                    const transactions = transactionsQuery.data || [];
+                    if (transactions.length === 0) {
+                      return (
+                        <div className="text-center text-muted-foreground p-4">
+                          Nenhuma transação encontrada
+                        </div>
+                      );
+                    }
+                    
+                    // Group by asset and calculate volume
+                    const assetStats = transactions.reduce((acc, t) => {
+                      const key = t.ativo.ticker;
+                      const volume = Number(t.shares) * Number(t.pricePerShare);
+                      
+                      if (!acc[key]) {
+                        acc[key] = {
+                          ticker: t.ativo.ticker,
+                          name: t.ativo.name,
+                          volume: 0,
+                          transactions: 0,
+                          compras: 0,
+                          vendas: 0
+                        };
+                      }
+                      
+                      acc[key].volume += volume;
+                      acc[key].transactions += 1;
+                      
+                      if (t.type === "COMPRA") {
+                        acc[key].compras += 1;
+                      } else {
+                        acc[key].vendas += 1;
+                      }
+                      
+                      return acc;
+                    }, {} as Record<string, any>);
+                    
+                    // Sort by volume and take top 5
+                    const topAssets = Object.values(assetStats)
+                      .sort((a: any, b: any) => b.volume - a.volume)
+                      .slice(0, 5);
+                    
+                    return topAssets.map((asset: any, index) => (
+                      <div key={asset.ticker} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                            #{index + 1}
+                          </div>
+                          <div>
+                            <div className="font-medium">{asset.ticker}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {asset.transactions} transação{asset.transactions !== 1 ? 'ões' : ''}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold">{formatCurrency(asset.volume)}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {asset.compras}C / {asset.vendas}V
+                          </div>
+                        </div>
+                      </div>
+                    ));
+                  })()} 
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Additional Analysis Cards */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Análise Temporal</CardTitle>
+                <CardDescription>Transações por período</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const transactions = transactionsQuery.data || [];
+                  const now = new Date();
+                  const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                  const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                  
+                  const recent7 = transactions.filter(t => new Date(t.date) >= last7Days).length;
+                  const recent30 = transactions.filter(t => new Date(t.date) >= last30Days).length;
+                  
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Últimos 7 dias:</span>
+                        <span className="font-medium">{recent7} transações</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Últimos 30 dias:</span>
+                        <span className="font-medium">{recent30} transações</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Total histórico:</span>
+                        <span className="font-medium">{transactions.length} transações</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Ticket Médio</CardTitle>
+                <CardDescription>Valor médio das operações</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const transactions = transactionsQuery.data || [];
+                  if (transactions.length === 0) {
+                    return <div className="text-muted-foreground">Sem dados</div>;
+                  }
+                  
+                  const compras = transactions.filter(t => t.type === "COMPRA");
+                  const vendas = transactions.filter(t => t.type === "VENDA");
+                  
+                  const ticketMedioCompras = compras.length > 0 
+                    ? compras.reduce((sum, t) => sum + (Number(t.shares) * Number(t.pricePerShare)), 0) / compras.length
+                    : 0;
+                    
+                  const ticketMedioVendas = vendas.length > 0
+                    ? vendas.reduce((sum, t) => sum + (Number(t.shares) * Number(t.pricePerShare)), 0) / vendas.length
+                    : 0;
+                  
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-green-600">Compras:</span>
+                        <span className="font-medium text-green-600">{formatCurrency(ticketMedioCompras)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-red-600">Vendas:</span>
+                        <span className="font-medium text-red-600">{formatCurrency(ticketMedioVendas)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Diversificação</CardTitle>
+                <CardDescription>Número de ativos únicos</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const transactions = transactionsQuery.data || [];
+                  const uniqueAssets = new Set(transactions.map(t => t.ativo.ticker)).size;
+                  const compraAssets = new Set(transactions.filter(t => t.type === "COMPRA").map(t => t.ativo.ticker)).size;
+                  const vendaAssets = new Set(transactions.filter(t => t.type === "VENDA").map(t => t.ativo.ticker)).size;
+                  
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Ativos únicos:</span>
+                        <span className="font-medium">{uniqueAssets}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-green-600">Comprados:</span>
+                        <span className="font-medium text-green-600">{compraAssets}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-red-600">Vendidos:</span>
+                        <span className="font-medium text-red-600">{vendaAssets}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Update Cash Balance Modal */}
+      {showUpdateCashModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Atualizar Saldo Disponível</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="newCashBalance">Novo Saldo (R$)</Label>
+                <Input
+                  id="newCashBalance"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={newCashBalance}
+                  onChange={(e) => setNewCashBalance(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>Saldo Atual:</span>
+                  <span className="font-medium">{formatCurrency(currentCashBalance)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Novo Saldo:</span>
+                  <span className="font-medium">
+                    {newCashBalance ? formatCurrency(parseFloat(newCashBalance) || 0) : formatCurrency(0)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowUpdateCashModal(false);
+                    setNewCashBalance("");
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleUpdateCashBalance}
+                  disabled={
+                    updateCashMutation.isPending ||
+                    !newCashBalance ||
+                    isNaN(parseFloat(newCashBalance)) ||
+                    parseFloat(newCashBalance) < 0
+                  }
+                >
+                  {updateCashMutation.isPending ? 'Atualizando...' : 'Confirmar'}
+                </Button>
+              </div>
+
+              {updateCashMutation.error && (
+                <p className="text-red-600 text-sm text-center">
+                  {updateCashMutation.error.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
