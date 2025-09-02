@@ -168,7 +168,7 @@ async function seedDadosHistoricos() {
       })
     );
     
-    const validDados = dadosToInsert.filter(Boolean);
+    const validDados = dadosToInsert.filter((dado): dado is NonNullable<typeof dado> => dado !== null);
     
     try {
       await prisma.dadoHistorico.createMany({

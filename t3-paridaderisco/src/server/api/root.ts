@@ -5,6 +5,7 @@ import { portfolioRouter } from "~/server/api/routers/portfolio";
 import { cestaRouter } from "~/server/api/routers/cesta";
 import { fundoRouter } from "~/server/api/routers/fundo";
 import { financialRouter } from "~/server/api/routers/financial";
+import { chartsRouter } from "~/server/api/routers/charts";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   cesta: cestaRouter,
   fundo: fundoRouter,
   financial: financialRouter,
+  charts: chartsRouter,
 });
 
 // export type definition of API

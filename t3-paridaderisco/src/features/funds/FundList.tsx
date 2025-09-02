@@ -214,9 +214,9 @@ export function FundList({ funds, onEdit, onRefresh }: FundListProps) {
               <Button
                 size="sm"
                 onClick={() => handleUpdateValue(fund.id)}
-                disabled={!updatingValue[fund.id] || updateValueMutation.isLoading}
+                disabled={!updatingValue[fund.id] || updateValueMutation.isPending}
               >
-                {updateValueMutation.isLoading ? (
+                {updateValueMutation.isPending ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
                 ) : (
                   'Atualizar'

@@ -25,9 +25,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         httpLink({
           url: "/api/trpc",
           headers: getAuthHeaders,
+          transformer: superjson,
         }),
       ],
-      transformer: superjson,
     }),
   );
 

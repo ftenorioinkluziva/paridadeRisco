@@ -28,7 +28,6 @@ class FinancialScheduler {
         console.error("❌ Scheduled financial data update failed:", error);
       }
     }, {
-      scheduled: true,
       timezone: "America/Sao_Paulo"
     });
 
@@ -42,7 +41,6 @@ class FinancialScheduler {
         console.error("❌ Weekly financial data update failed:", error);
       }
     }, {
-      scheduled: true,
       timezone: "America/Sao_Paulo"
     });
 
@@ -57,7 +55,7 @@ class FinancialScheduler {
       return;
     }
 
-    cron.destroy();
+    // cron.destroy();
     this.isRunning = false;
     console.log("🛑 Financial data scheduler stopped");
   }

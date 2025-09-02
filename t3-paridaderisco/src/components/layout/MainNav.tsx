@@ -12,11 +12,13 @@ import {
   User,
   LogOut,
   Settings,
+  BarChart3,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Portfolio", href: "/portfolio", icon: Briefcase },
+  { name: "Charts", href: "/charts", icon: BarChart3 },
   { name: "Baskets", href: "/baskets", icon: ShoppingCart },
   { name: "Admin", href: "/admin", icon: Settings },
 ] as const;
