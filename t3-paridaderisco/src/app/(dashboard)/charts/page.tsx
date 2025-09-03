@@ -36,7 +36,7 @@ export default function ChartsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("365d");
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
-  const [activeTab, setActiveTab] = useState<string>("single");
+  const [activeTab, setActiveTab] = useState<"single" | "normalized" | "compare">("single");
 
   // API queries
   const { 
@@ -93,7 +93,7 @@ export default function ChartsPage() {
       endDate: customEndDate,
     },
     {
-      enabled: selectedAssets.length > 1 && activeTab === "comparison",
+      enabled: selectedAssets.length > 1 && activeTab === "compare",
       refetchOnWindowFocus: false
     }
   );
@@ -113,7 +113,8 @@ export default function ChartsPage() {
 
   // Calcular estatísticas do asset selecionado
   const currentAssetStats = useMemo(() => {
-    const dataToUse = activeTab === "single" ? singleTimeSeriesData : normalizedTimeSeriesData;
+    const dataToUse = activeTab === "single" ? singleTimeSeriesData : 
+                     activeTab === "normalized" ? normalizedTimeSeriesData : null;
     if (!dataToUse?.data) return null;
     return calculateStats(dataToUse.data);
   }, [singleTimeSeriesData, normalizedTimeSeriesData, activeTab]);
@@ -201,10 +202,10 @@ export default function ChartsPage() {
                     assets={assetOptions}
                     selectedAssets={selectedAssets}
                     onSelectionChange={handleAssetSelectionChange}
-                    maxSelection={activeTab === "comparison" ? 10 : 1}
+                    maxSelection={activeTab === "compare" ? 10 : 1}
                     isLoading={loadingAssets}
                     placeholder={
-                      activeTab === "comparison" 
+                      activeTab === "compare" 
                         ? "Selecione até 10 ativos..."
                         : "Selecione um ativo..."
                     }
@@ -280,10 +281,10 @@ export default function ChartsPage() {
                 assets={assetOptions}
                 selectedAssets={selectedAssets}
                 onSelectionChange={handleAssetSelectionChange}
-                maxSelection={activeTab === "comparison" ? 10 : 1}
+                maxSelection={activeTab === "compare" ? 10 : 1}
                 isLoading={loadingAssets}
                 placeholder={
-                  activeTab === "comparison" 
+                  activeTab === "compare" 
                     ? "Selecione até 10 ativos para comparar..."
                     : "Selecione um ativo..."
                 }
@@ -374,7 +375,7 @@ export default function ChartsPage() {
                     <TrendingUp className="h-4 w-4" />
                     <span className="text-[10px] sm:text-sm">Retorno</span>
                   </TabsTrigger>
-                  <TabsTrigger value="comparison" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2">
+                  <TabsTrigger value="compare" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2">
                     <BarChart3 className="h-4 w-4" />
                     <span className="text-[10px] sm:text-sm">Compare</span>
                   </TabsTrigger>
@@ -467,9 +468,9 @@ export default function ChartsPage() {
               </TabsContent>
 
               {/* Tab: Comparação */}
-              <TabsContent value="comparison" className="space-y-4">
+              <TabsContent value="compare" className="space-y-4">
                 {selectedAssets.length < 2 ? (
-                  <ChartEmptyState type="comparison" />
+                  <ChartEmptyState type="compare" />
                 ) : multiAssetError ? (
                   renderError(multiAssetError, () => window.location.reload())
                 ) : loadingMultiAsset ? (

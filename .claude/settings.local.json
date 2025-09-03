@@ -59,7 +59,8 @@
       "Bash(npx tsx:*)",
       "Bash(npx tsc:*)",
       "Bash(taskkill:*)",
-      "Bash(del \"C:\\projetos\\paridadeRisco\\t3-paridaderisco\\src\\app\\register\\page.tsx\")"
+      "Bash(del \"C:\\projetos\\paridadeRisco\\t3-paridaderisco\\src\\app\\register\\page.tsx\")",
+      "Bash(NEXT_LINT=false npm run build)"
     ],
     "deny": []
   }
