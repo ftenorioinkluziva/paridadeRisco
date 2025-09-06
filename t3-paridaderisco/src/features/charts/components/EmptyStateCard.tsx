@@ -74,7 +74,7 @@ export const EmptyStateCard: React.FC<EmptyStateCardProps> = ({
 
 // Predefined empty states for common scenarios
 export const ChartEmptyState: React.FC<{
-  type: "single" | "comparison" | "normalized";
+  type: "single" | "comparison" | "normalized" | undefined;
   onExploreAssets?: () => void;
 }> = ({ type, onExploreAssets }) => {
   const configs = {
@@ -103,11 +103,17 @@ export const ChartEmptyState: React.FC<{
     }
   };
 
-  const config = configs[type];
+  // Guard against undefined/invalid runtime values
+  const allowedTypes = ["single", "comparison", "normalized"] as const;
+  const isValidType = (t: unknown): t is (typeof allowedTypes)[number] =>
+    typeof t === "string" && (allowedTypes as readonly string[]).includes(t);
+
+  const safeType = isValidType(type) ? type : "single";
+  const config = configs[safeType];
   
   return (
     <EmptyStateCard
-      icon={getIconForType(type)}
+      icon={getIconForType(safeType)}
       title={config.title}
       description={config.description}
       action={config.action}
