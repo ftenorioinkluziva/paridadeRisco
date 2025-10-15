@@ -10,6 +10,8 @@ const config = {
     // Temporarily disable for initial setup
     // typedRoutes: true,
   },
+  // Output standalone para Docker
+  output: 'standalone',
 };
 
 export default config;

@@ -11,9 +11,9 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  TrendingUp,
+  TrendingDown,
   Plus,
   Search,
   Filter,
@@ -21,11 +21,12 @@ import {
   DollarSign
 } from "lucide-react";
 import { TransactionType } from "@prisma/client";
+import { formatNumberByAssetClass } from "~/lib/utils";
 
 const transactionSchema = z.object({
   ativoId: z.string().min(1, "Selecione um ativo"),
   type: z.nativeEnum(TransactionType),
-  shares: z.number().positive("Quantidade deve ser positiva"),
+  shares: z.number().positive("Quantidade deve ser positiva").min(0.00000001, "Quantidade deve ser maior que zero"),
   pricePerShare: z.number().positive("Preço deve ser positivo"),
   date: z.string().optional(),
 });
@@ -285,9 +286,9 @@ export function TransactionManager() {
                     <Input
                       id="shares"
                       type="number"
-                      step="1"
-                      min="1"
-                      placeholder="Ex: 100"
+                      step="any"
+                      min="0.00000001"
+                      placeholder="Ex: 100 ou 0.00249076"
                       {...register("shares", { valueAsNumber: true })}
                     />
                     {errors.shares && (
@@ -338,7 +339,7 @@ export function TransactionManager() {
                         </div>
                         <div className="flex justify-between">
                           <span>Quantidade:</span>
-                          <span>{watchedShares} ações</span>
+                          <span>{formatNumberByAssetClass(watchedShares, selectedAssetData?.type)} ações</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Preço unitário:</span>
@@ -449,7 +450,7 @@ export function TransactionManager() {
                             </Badge>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {Number(transaction.shares)} ações @ {formatCurrency(Number(transaction.pricePerShare))}
+                            {formatNumberByAssetClass(Number(transaction.shares), transaction.ativo.type)} ações @ {formatCurrency(Number(transaction.pricePerShare))}
                           </div>
                         </div>
                       </div>

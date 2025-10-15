@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Read(C:\\projetos\\paridadeRisco/**)"
+      "Read(C:\\projetos\\paridadeRisco/**)",
+      "Bash(npm run db:push:*)",
+      "Bash(npx tsx:*)",
+      "Read(//c/**)",
+      "Bash(npm run build)"
     ],
     "deny": [],
     "ask": []

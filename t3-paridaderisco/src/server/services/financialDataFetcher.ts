@@ -98,7 +98,23 @@ export class FinancialDataFetcher {
     { ticker: 'CDI', name: 'CDI', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
     { ticker: 'IPCA', name: 'IPCA (Inflação)', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
     { ticker: 'IPCA_EXP', name: 'IPCA Expectativa 12M', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
+    { ticker: 'BTC-USD', name: 'Bitcoin', type: 'Crypto', calculationType: AssetCalculationType.PRECO },
+    { ticker: 'ETH-USD', name: 'Ethereum', type: 'Crypto', calculationType: AssetCalculationType.PRECO },
+    { ticker: 'BNB-USD', name: 'Binance Coin', type: 'Crypto', calculationType: AssetCalculationType.PRECO },
   ];
+
+  async fetchUSDExchangeRate(): Promise<number | null> {
+    try {
+      const data = await this.fetchYahooFinanceData('USDBRL=X');
+      if (data && data.currentPrice) {
+        return data.currentPrice;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching USD/BRL exchange rate:', error);
+      return null;
+    }
+  }
 
   async fetchYahooFinanceData(ticker: string, startDate?: Date, endDate?: Date): Promise<AssetData | null> {
     try {
@@ -186,6 +202,83 @@ export class FinancialDataFetcher {
 
     } catch (error) {
       console.error(`Error fetching Yahoo Finance data for ${ticker}:`, error);
+      return null;
+    }
+  }
+
+  async fetchCryptoData(ticker: string, startDate?: Date, endDate?: Date): Promise<AssetData | null> {
+    try {
+      console.log(`Fetching cryptocurrency data for ${ticker}...`);
+
+      // 1. Fetch crypto data in USD
+      const cryptoDataUSD = await this.fetchYahooFinanceData(ticker, startDate, endDate);
+      if (!cryptoDataUSD) {
+        console.error(`Failed to fetch crypto data for ${ticker}`);
+        return null;
+      }
+
+      // 2. Fetch USD/BRL historical data for the same period
+      const usdBrlData = await this.fetchYahooFinanceData('USDBRL=X', startDate, endDate);
+      if (!usdBrlData) {
+        console.error('Failed to fetch USD/BRL exchange rate data');
+        return null;
+      }
+
+      // 3. Create a map of dates to exchange rates
+      const exchangeRateMap = new Map<string, number>();
+      for (const dataPoint of usdBrlData.historicalData) {
+        const dateKey = dataPoint.date.toISOString().split('T')[0];
+        if (dataPoint.price !== null) {
+          exchangeRateMap.set(dateKey, dataPoint.price);
+        }
+      }
+
+      // 4. Convert prices from USD to BRL
+      const historicalDataBRL = [];
+      let previousPrice: number | null = null;
+
+      for (const dataPoint of cryptoDataUSD.historicalData) {
+        const dateKey = dataPoint.date.toISOString().split('T')[0];
+        const exchangeRate = exchangeRateMap.get(dateKey);
+
+        if (dataPoint.price !== null && exchangeRate) {
+          const priceInBRL = dataPoint.price * exchangeRate;
+
+          let percentageChange: number | null = null;
+          if (previousPrice !== null && previousPrice !== 0) {
+            percentageChange = ((priceInBRL - previousPrice) / previousPrice) * 100;
+          }
+
+          historicalDataBRL.push({
+            date: dataPoint.date,
+            price: priceInBRL,
+            percentageChange,
+          });
+
+          previousPrice = priceInBRL;
+        }
+      }
+
+      // 5. Find asset configuration
+      const assetConfig = this.defaultAssets.find(a => a.ticker === ticker);
+      if (!assetConfig) {
+        console.error(`Unknown crypto ticker: ${ticker}`);
+        return null;
+      }
+
+      console.log(`Successfully fetched ${historicalDataBRL.length} records for ${ticker} in BRL`);
+
+      return {
+        ticker,
+        name: assetConfig.name,
+        type: assetConfig.type,
+        calculationType: assetConfig.calculationType,
+        currentPrice: historicalDataBRL.length > 0 ? historicalDataBRL[historicalDataBRL.length - 1].price : undefined,
+        historicalData: historicalDataBRL,
+      };
+
+    } catch (error) {
+      console.error(`Error fetching crypto data for ${ticker}:`, error);
       return null;
     }
   }
@@ -493,7 +586,9 @@ export class FinancialDataFetcher {
 
         let assetData: AssetData | null;
 
-        if (assetConfig.ticker === 'CDI') {
+        if (assetConfig.type === 'Crypto') {
+          assetData = await this.fetchCryptoData(assetConfig.ticker, startDate);
+        } else if (assetConfig.ticker === 'CDI') {
           assetData = await this.fetchBCBData(this.CDI_SERIES_CODE, startDate);
         } else if (assetConfig.ticker === 'IPCA') {
           assetData = await this.fetchIPCAData(startDate);
@@ -523,7 +618,12 @@ export class FinancialDataFetcher {
     try {
       let assetData: AssetData | null;
 
-      if (ticker === 'CDI') {
+      // Check if it's a cryptocurrency
+      const assetConfig = this.defaultAssets.find(a => a.ticker === ticker);
+
+      if (assetConfig?.type === 'Crypto') {
+        assetData = await this.fetchCryptoData(ticker, startDate, endDate);
+      } else if (ticker === 'CDI') {
         assetData = await this.fetchBCBData(this.CDI_SERIES_CODE, startDate, endDate);
       } else if (ticker === 'IPCA') {
         assetData = await this.fetchIPCAData(startDate, endDate);

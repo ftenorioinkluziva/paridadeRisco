@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +11,8 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { 
+import { AllocationProgressBar } from "./components/AllocationProgressBar";
+import {
   PieChart,
   Plus,
   Edit,
@@ -19,7 +20,9 @@ import {
   Target,
   TrendingUp,
   BarChart3,
-  Search
+  Search,
+  Check,
+  Percent
 } from "lucide-react";
 
 const basketSchema = z.object({
@@ -39,6 +42,7 @@ export function CestaViewer() {
   const [selectedBasket, setSelectedBasket] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedAssetForAllocation, setSelectedAssetForAllocation] = useState<string | null>(null);
 
   // API queries
   const cestasQuery = api.cesta.list.useQuery();
@@ -60,10 +64,27 @@ export function CestaViewer() {
 
   // Mutations
   const createBasketMutation = api.cesta.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       basketForm.reset();
       setIsCreating(false);
+      setSelectedBasket(data.id);
       cestasQuery.refetch();
+    },
+  });
+
+  const addAssetMutation = api.cesta.addAsset.useMutation({
+    onSuccess: () => {
+      allocationForm.reset();
+      setSelectedAssetForAllocation(null);
+      cestasQuery.refetch();
+      selectedBasketQuery.refetch();
+    },
+  });
+
+  const removeAssetMutation = api.cesta.removeAsset.useMutation({
+    onSuccess: () => {
+      cestasQuery.refetch();
+      selectedBasketQuery.refetch();
     },
   });
 
@@ -74,15 +95,50 @@ export function CestaViewer() {
   const onSubmitBasket = (data: BasketFormData) => {
     createBasketMutation.mutate({
       name: data.name,
-      ativos: [], // Will be added later in allocation management
     });
   };
 
-  // Filter assets for allocation
-  const filteredAssets = assetsQuery.data?.filter(asset =>
-    asset.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const onAddAsset = (data: AllocationFormData) => {
+    if (!selectedBasket) return;
+
+    addAssetMutation.mutate({
+      cestaId: selectedBasket,
+      ativoId: data.ativoId,
+      targetPercentage: data.targetPercentage,
+    });
+  };
+
+  // Calculate total allocation
+  const totalAllocated = useMemo(() => {
+    if (!selectedBasketQuery.data?.ativos) return 0;
+    return selectedBasketQuery.data.ativos.reduce(
+      (sum, allocation) => sum + Number(allocation.targetPercentage),
+      0
+    );
+  }, [selectedBasketQuery.data]);
+
+  // Get already allocated asset IDs
+  const allocatedAssetIds = useMemo(() => {
+    if (!selectedBasketQuery.data?.ativos) return new Set<string>();
+    return new Set(selectedBasketQuery.data.ativos.map(a => a.ativo.id));
+  }, [selectedBasketQuery.data]);
+
+  // Filter assets for allocation (exclude already allocated)
+  const filteredAssets = useMemo(() => {
+    const assets = assetsQuery.data?.filter(asset =>
+      (asset.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      !allocatedAssetIds.has(asset.id)
+    ) || [];
+    return assets;
+  }, [assetsQuery.data, searchTerm, allocatedAssetIds]);
+
+  // Get selected asset details
+  const selectedAssetDetails = useMemo(() => {
+    if (!selectedAssetForAllocation) return null;
+    return assetsQuery.data?.find(a => a.id === selectedAssetForAllocation);
+  }, [selectedAssetForAllocation, assetsQuery.data]);
+
 
   return (
     <div className="space-y-6">
@@ -295,89 +351,261 @@ export function CestaViewer() {
         </TabsContent>
 
         <TabsContent value="allocations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gerenciar Alocações</CardTitle>
-              <CardDescription>
-                {selectedBasket ? 'Defina a alocação target para cada ativo na cesta' : 'Selecione uma cesta para gerenciar alocações'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!selectedBasket ? (
-                <div className="text-center p-8 text-muted-foreground">
-                  <PieChart className="mx-auto h-12 w-12 mb-4" />
-                  <p>Selecione uma cesta na aba "Visualizar Cestas" para gerenciar suas alocações</p>
+          {!selectedBasket ? (
+            <Card>
+              <CardContent className="p-12">
+                <div className="text-center text-muted-foreground">
+                  <PieChart className="mx-auto h-16 w-16 mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">Nenhuma Cesta Selecionada</h3>
+                  <p className="mb-4">Selecione uma cesta na aba "Visualizar Cestas" para gerenciar suas alocações</p>
+                  <Button onClick={() => setSelectedTab("view")}>
+                    Ir para Cestas
+                  </Button>
                 </div>
-              ) : (
-                <div className="grid gap-6 md:grid-cols-2">
-                  {/* Asset Selection */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Adicionar Ativo</h3>
-                    
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        placeholder="Buscar ativos..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {/* Progress Bar */}
+              <AllocationProgressBar
+                totalAllocated={totalAllocated}
+                assetCount={selectedBasketQuery.data?.ativos?.length || 0}
+              />
 
-                    <div className="max-h-64 overflow-y-auto space-y-2">
-                      {filteredAssets.map((asset) => (
-                        <div
-                          key={asset.id}
-                          className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                          onClick={() => {
-                            allocationForm.setValue("ativoId", asset.id);
-                            setSearchTerm("");
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{asset.ticker}</div>
-                              <div className="text-sm text-muted-foreground">{asset.name}</div>
+              <div className="grid gap-4 lg:grid-cols-3">
+                {/* Ativos Alocados - Sidebar */}
+                <div className="lg:col-span-1">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Ativos Alocados</CardTitle>
+                      <CardDescription>
+                        {selectedBasketQuery.data?.ativos?.length || 0} de {assetsQuery.data?.length || 0} disponíveis
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {selectedBasketQuery.data?.ativos && selectedBasketQuery.data.ativos.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedBasketQuery.data.ativos.map((allocation) => (
+                            <div
+                              key={allocation.ativo.id}
+                              className="group relative p-3 border rounded-lg hover:border-primary/50 transition-all"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-sm truncate">
+                                      {allocation.ativo.ticker}
+                                    </span>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {allocation.ativo.type}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                    {allocation.ativo.name}
+                                  </p>
+                                  <div className="mt-2">
+                                    <div className="text-lg font-bold text-primary">
+                                      {formatPercent(Number(allocation.targetPercentage))}
+                                    </div>
+                                    <div className="w-full bg-muted rounded-full h-1.5 mt-1">
+                                      <div
+                                        className="bg-primary h-1.5 rounded-full transition-all"
+                                        style={{ width: `${Number(allocation.targetPercentage)}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    removeAssetMutation.mutate({
+                                      cestaId: selectedBasket!,
+                                      ativoId: allocation.ativo.id,
+                                    });
+                                  }}
+                                  disabled={removeAssetMutation.isPending}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <Badge variant="outline">{asset.type}</Badge>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Target className="mx-auto h-10 w-10 mb-2 opacity-50" />
+                          <p className="text-sm">Nenhum ativo alocado</p>
+                          <p className="text-xs mt-1">Selecione ativos abaixo</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
 
-                  {/* Allocation Form */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Definir Alocação</h3>
-                    <form className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="targetPercentage">Alocação Target (%)</Label>
+                {/* Adicionar Novos Ativos - Main Area */}
+                <div className="lg:col-span-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Adicionar Ativos à Cesta</CardTitle>
+                      <CardDescription>
+                        Selecione um ativo e defina sua alocação target
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Search Bar */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                         <Input
-                          id="targetPercentage"
-                          type="number"
-                          step="0.1"
-                          min="0.1"
-                          max="100"
-                          placeholder="Ex: 25.0"
-                          {...allocationForm.register("targetPercentage", { valueAsNumber: true })}
+                          placeholder="Buscar ativos disponíveis..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
                         />
-                        {allocationForm.formState.errors.targetPercentage && (
-                          <p className="text-red-600 text-sm">
-                            {allocationForm.formState.errors.targetPercentage.message}
-                          </p>
-                        )}
                       </div>
 
-                      <Button type="button" className="w-full">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Adicionar à Cesta
-                      </Button>
-                    </form>
-                  </div>
+                      {/* Selected Asset Form */}
+                      {selectedAssetDetails && (
+                        <div className="p-4 border-2 border-primary rounded-lg bg-primary/5 animate-in fade-in-50 slide-in-from-top-2">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <Check className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold">{selectedAssetDetails.ticker}</span>
+                                  <Badge>{selectedAssetDetails.type}</Badge>
+                                  <Badge variant="secondary" className="bg-primary/10 text-primary">
+                                    SELECIONADO
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {selectedAssetDetails.name}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedAssetForAllocation(null);
+                                allocationForm.reset();
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+
+                          <form onSubmit={allocationForm.handleSubmit(onAddAsset)} className="space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="targetPercentage" className="flex items-center gap-2">
+                                <Percent className="h-4 w-4" />
+                                Alocação Target (%)
+                              </Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  id="targetPercentage"
+                                  type="number"
+                                  step="0.1"
+                                  min="0.1"
+                                  max="100"
+                                  placeholder="Ex: 25.0"
+                                  autoFocus
+                                  className="text-lg font-medium"
+                                  {...allocationForm.register("targetPercentage", { valueAsNumber: true })}
+                                />
+                                <Button
+                                  type="submit"
+                                  size="lg"
+                                  disabled={addAssetMutation.isPending}
+                                  className="min-w-[120px]"
+                                >
+                                  {addAssetMutation.isPending ? (
+                                    <>Adicionando...</>
+                                  ) : (
+                                    <>
+                                      <Plus className="mr-2 h-4 w-4" />
+                                      Adicionar
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                              {allocationForm.formState.errors.targetPercentage && (
+                                <p className="text-red-600 text-sm">
+                                  {allocationForm.formState.errors.targetPercentage.message}
+                                </p>
+                              )}
+                              {addAssetMutation.error && (
+                                <p className="text-red-600 text-sm">{addAssetMutation.error.message}</p>
+                              )}
+                            </div>
+                          </form>
+                        </div>
+                      )}
+
+                      {/* Asset List */}
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {filteredAssets.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            {searchTerm ? (
+                              <>
+                                <Search className="mx-auto h-10 w-10 mb-2 opacity-50" />
+                                <p className="text-sm">Nenhum ativo encontrado para "{searchTerm}"</p>
+                              </>
+                            ) : (
+                              <>
+                                <Check className="mx-auto h-10 w-10 mb-2 opacity-50 text-green-600" />
+                                <p className="text-sm font-medium">Todos os ativos foram alocados!</p>
+                                <p className="text-xs mt-1">Remova algum ativo para adicionar outro</p>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          filteredAssets.map((asset) => (
+                            <div
+                              key={asset.id}
+                              className={`
+                                p-3 border-2 rounded-lg cursor-pointer transition-all
+                                ${selectedAssetForAllocation === asset.id
+                                  ? 'border-primary bg-primary/5 shadow-sm'
+                                  : 'border-transparent hover:border-gray-300 hover:shadow-sm'
+                                }
+                              `}
+                              onClick={() => {
+                                setSelectedAssetForAllocation(asset.id);
+                                allocationForm.setValue("ativoId", asset.id);
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  {selectedAssetForAllocation === asset.id ? (
+                                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                                      <Check className="h-4 w-4 text-primary-foreground" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-8 h-8 border-2 border-muted rounded-full flex items-center justify-center">
+                                      <div className="w-3 h-3 bg-muted rounded-full" />
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className="font-semibold">{asset.ticker}</div>
+                                    <div className="text-sm text-muted-foreground">{asset.name}</div>
+                                  </div>
+                                </div>
+                                <Badge variant="outline">{asset.type}</Badge>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-4">

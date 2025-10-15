@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
   PieChart,
   BarChart3,
   ArrowUpDown,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { FundManager } from "~/features/funds/FundManager";
 import { TransactionManager } from "~/features/transactions/TransactionManager";
+import { formatNumberByAssetClass } from "~/lib/utils";
 
 export function PortfolioManager() {
   const [selectedTab, setSelectedTab] = useState("overview");
@@ -373,7 +374,7 @@ export function PortfolioManager() {
                           <h3 className="font-semibold text-lg">{position.ativo.ticker}</h3>
                           <p className="text-muted-foreground">{position.ativo.name}</p>
                           <div className="flex space-x-4 mt-2 text-sm">
-                            <span>Shares: {position.shares}</span>
+                            <span>Shares: {formatNumberByAssetClass(position.shares, position.ativo.type)}</span>
                             <span>Preço Médio: {formatCurrency(position.averagePrice)}</span>
                             <span>Preço Atual: {formatCurrency(position.currentPrice)}</span>
                           </div>
@@ -550,27 +551,98 @@ export function PortfolioManager() {
                     <div className="space-y-3">
                       <h4 className="font-semibold">Transações Recomendadas:</h4>
                       {rebalanceData.suggestions.map((suggestion: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <Badge variant={suggestion.action === 'COMPRA' ? 'default' : 'secondary'}>
+                        <div key={index} className={`border rounded-lg overflow-hidden ${
+                          suggestion.action === 'COMPRA' ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/30'
+                        }`}>
+                          {/* Header com ticker e badge */}
+                          <div className="flex items-center justify-between p-3 border-b bg-white/50">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                                suggestion.action === 'COMPRA' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {suggestion.ativo.ticker.substring(0, 3)}
+                              </div>
+                              <div>
+                                <div className="font-bold text-base">{suggestion.ativo.ticker}</div>
+                                <div className="text-xs text-muted-foreground">{suggestion.ativo.name}</div>
+                              </div>
+                            </div>
+                            <Badge variant={suggestion.action === 'COMPRA' ? 'default' : 'secondary'} className="text-xs px-3 py-1">
                               {suggestion.action === 'COMPRA' ? 'COMPRAR' : 'VENDER'}
                             </Badge>
-                            <div>
-                              <div className="font-medium">{suggestion.ativo.ticker}</div>
-                              <div className="text-sm text-muted-foreground">
-                                {Math.abs(suggestion.shareDifference)} ações
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Atual: {suggestion.currentPercent?.toFixed(1)}% → Target: {suggestion.targetPercentage?.toFixed(1)}%
-                              </div>
-                            </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-semibold">
-                              {formatCurrency(suggestion.estimatedCost)}
+
+                          {/* Corpo do card com informações */}
+                          <div className="p-3 space-y-3">
+                            {/* Quantidade */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">{formatNumberByAssetClass(Math.abs(suggestion.shareDifference), suggestion.ativo.type)} ações</span>
+                              <span className="font-bold text-lg">
+                                {formatCurrency(suggestion.estimatedCost)}
+                              </span>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              Diferença: {formatCurrency(Math.abs(suggestion.valueDifference || 0))}
+
+                            {/* Alocação atual vs target */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-600">Atual: {suggestion.currentPercent?.toFixed(1)}%</span>
+                                <span className="text-gray-400">→</span>
+                                <span className="font-medium text-blue-600">Target: {suggestion.targetPercentage?.toFixed(1)}%</span>
+                              </div>
+
+                              {/* Barra de progresso com escala baseada no target */}
+                              <div className="relative">
+                                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                  {(() => {
+                                    const current = suggestion.currentPercent || 0;
+                                    const target = suggestion.targetPercentage || 0;
+                                    const percentOfTarget = target > 0 ? (current / target) * 100 : 0;
+
+                                    return (
+                                      <>
+                                        {/* Barra de progresso atual */}
+                                        <div
+                                          className={`h-3 rounded-full transition-all ${
+                                            percentOfTarget < 100
+                                              ? 'bg-yellow-500'
+                                              : percentOfTarget === 100
+                                              ? 'bg-green-500'
+                                              : 'bg-blue-500'
+                                          }`}
+                                          style={{ width: `${Math.min(percentOfTarget, 100)}%` }}
+                                        />
+
+                                        {/* Indicador de over-allocation se > 100% */}
+                                        {percentOfTarget > 100 && (
+                                          <div
+                                            className="absolute top-0 left-0 h-3 bg-red-500/30 rounded-full"
+                                            style={{ width: '100%' }}
+                                          />
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+
+                                {/* Texto indicativo do progresso */}
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-[10px] text-gray-500">0%</span>
+                                  <span className="text-[10px] font-medium text-blue-600">
+                                    {(() => {
+                                      const current = suggestion.currentPercent || 0;
+                                      const target = suggestion.targetPercentage || 0;
+                                      const percentOfTarget = target > 0 ? (current / target) * 100 : 0;
+                                      return `${percentOfTarget.toFixed(0)}% do target`;
+                                    })()}
+                                  </span>
+                                  <span className="text-[10px] text-blue-600">100%</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Shares atuais */}
+                            <div className="text-xs text-gray-500 pt-1 border-t">
+                              Shares atuais: {formatNumberByAssetClass(suggestion.currentShares || 0, suggestion.ativo.type)}
                             </div>
                           </div>
                         </div>

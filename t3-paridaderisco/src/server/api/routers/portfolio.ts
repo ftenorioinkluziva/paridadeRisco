@@ -344,8 +344,10 @@ export const portfolioRouter = createTRPCRouter({
 
         const currentValue = currentPositionValues.get(ativo.id) || 0;
         const targetValue = (currentPortfolioValue * Number(targetPercentage)) / 100;
-        const currentPercent = currentInvestedValue > 0 ? (currentValue / currentInvestedValue) * 100 : 0;
-        const targetShares = Math.floor(targetValue / currentPrice);
+        // Calculate currentPercent using the same base as targetPercentage
+        const currentPercent = currentPortfolioValue > 0 ? (currentValue / currentPortfolioValue) * 100 : 0;
+        // Use precise calculation for target shares (don't floor for crypto)
+        const targetShares = targetValue / currentPrice;
         const currentShares = currentPositions.get(ativo.id) || 0;
         const shareDifference = targetShares - currentShares;
         const valueDifference = targetValue - currentValue;
@@ -357,6 +359,7 @@ export const portfolioRouter = createTRPCRouter({
               id: ativo.id,
               ticker: ativo.ticker,
               name: ativo.name,
+              type: ativo.type,
               currentPrice,
             },
             currentShares,

@@ -243,19 +243,13 @@ export default function ChartsPage() {
                       <div>
                         <span className="text-muted-foreground">Máximo</span>
                         <div className="font-mono">
-                          {activeTab === "normalized" 
-                            ? formatPercentageChange(currentAssetStats.max)
-                            : `R$ ${currentAssetStats.max.toFixed(2)}`
-                          }
+                          {`R$ ${currentAssetStats.max.toFixed(2)}`}
                         </div>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Mínimo</span>
                         <div className="font-mono">
-                          {activeTab === "normalized" 
-                            ? formatPercentageChange(currentAssetStats.min)
-                            : `R$ ${currentAssetStats.min.toFixed(2)}`
-                          }
+                          {`R$ ${currentAssetStats.min.toFixed(2)}`}
                         </div>
                       </div>
                       <div>
@@ -333,20 +327,14 @@ export default function ChartsPage() {
                     <div className="flex justify-between items-center animate-fade-in-up-delay-200">
                       <span className="text-xs text-muted-foreground">Máximo</span>
                       <span className="text-xs font-mono">
-                        {activeTab === "normalized" 
-                          ? formatPercentageChange(currentAssetStats.max)
-                          : `R$ ${currentAssetStats.max.toFixed(2)}`
-                        }
+                        {`R$ ${currentAssetStats.max.toFixed(2)}`}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between items-center animate-fade-in-up-delay-300">
                       <span className="text-xs text-muted-foreground">Mínimo</span>
                       <span className="text-xs font-mono">
-                        {activeTab === "normalized" 
-                          ? formatPercentageChange(currentAssetStats.min)
-                          : `R$ ${currentAssetStats.min.toFixed(2)}`
-                        }
+                        {`R$ ${currentAssetStats.min.toFixed(2)}`}
                       </span>
                     </div>
                     
@@ -364,7 +352,7 @@ export default function ChartsPage() {
         {/* Área principal do gráfico */}
         <div className="lg:col-span-9 animate-fade-in-up-delay-200">
           <Card className="p-3 sm:p-6 hover-grow">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "single" | "normalized" | "compare")} className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <TabsList className="grid w-full grid-cols-3 sm:w-auto h-12 sm:h-10">
                   <TabsTrigger value="single" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm py-2">
@@ -470,7 +458,7 @@ export default function ChartsPage() {
               {/* Tab: Comparação */}
               <TabsContent value="compare" className="space-y-4">
                 {selectedAssets.length < 2 ? (
-                  <ChartEmptyState type="compare" />
+                  <ChartEmptyState type="comparison" />
                 ) : multiAssetError ? (
                   renderError(multiAssetError, () => window.location.reload())
                 ) : loadingMultiAsset ? (
