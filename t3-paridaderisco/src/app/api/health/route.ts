@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     // Testar conexão com o banco de dados
-    await db.$queryRaw`SELECT 1`;
+    await prisma.$queryRaw`SELECT 1`;
 
     return NextResponse.json(
       {
