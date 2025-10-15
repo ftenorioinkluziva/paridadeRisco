@@ -106,8 +106,8 @@ chmod +x deploy.sh
 
 **OU manualmente:**
 ```bash
-docker-compose build --no-cache
-docker-compose up -d
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ## Passo 6: Verificar Container

@@ -25,6 +25,8 @@ COPY . .
 # Variáveis de ambiente necessárias para build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Pular validação de env vars durante o build do Docker
+ENV SKIP_ENV_VALIDATION=1
 
 # Gerar Prisma Client
 RUN npx prisma generate
