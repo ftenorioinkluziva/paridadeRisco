@@ -46,9 +46,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copiar arquivos necessários do builder
-COPY --from=builder /app/public ./public
+# Copiar package.json
 COPY --from=builder /app/package.json ./package.json
+
+# Criar diretório public (mesmo vazio)
+RUN mkdir -p ./public
 
 # Copiar build do Next.js
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
