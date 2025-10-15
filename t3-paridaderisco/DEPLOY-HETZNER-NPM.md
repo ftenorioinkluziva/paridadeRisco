@@ -55,7 +55,7 @@ networks:
 ```bash
 # No servidor
 cd ~
-git clone SEU_REPOSITORIO
+git clone https://github.com/ftenorioinkluziva/paridadeRisco.git
 cd paridaderisco/t3-paridaderisco
 ```
 
