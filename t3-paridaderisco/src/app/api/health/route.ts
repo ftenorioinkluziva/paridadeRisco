@@ -4,7 +4,7 @@
  * Usado pelo Docker healthcheck para verificar se a aplicação está funcionando
  */
 
-import { db } from "~/server/db";
+import { prisma } from "~/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET() {
