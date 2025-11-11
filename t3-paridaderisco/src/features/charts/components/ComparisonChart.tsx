@@ -211,27 +211,34 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({
       margin={margin}
     >
       {showGrid && (
-        <CartesianGrid 
-          strokeDasharray="3 3" 
-          stroke="#e2e8f0" 
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="#e5e7eb"
+          strokeOpacity={0.6}
           vertical={false}
+          horizontalPoints={[0, 20, 40, 60, 80, 100]}
         />
       )}
-      
+
       <XAxis
         dataKey="formattedDate"
         axisLine={false}
         tickLine={false}
         tick={{ fontSize: 12, fill: "#64748b" }}
         tickMargin={10}
+        interval="preserveStartEnd"
+        minTickGap={50}
       />
-      
+
       <YAxis
         axisLine={false}
         tickLine={false}
         tick={{ fontSize: 12, fill: "#64748b" }}
-        tickFormatter={(value) => `${value.toFixed(1)}%`}
+        tickFormatter={(value) => `${value.toFixed(2)}%`}
         width={60}
+        domain={['auto', 'auto']}
+        scale="linear"
+        allowDataOverflow={false}
       />
       
       {showTooltip && (

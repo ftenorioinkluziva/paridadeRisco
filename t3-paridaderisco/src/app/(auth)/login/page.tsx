@@ -38,9 +38,9 @@ export default function LoginPage() {
       localStorage.setItem("auth_token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
       document.cookie = `auth_token=${result.token}; path=/; max-age=${24 * 60 * 60}`;
-      
-      // Redirect to dashboard
-      window.location.replace("/dashboard");
+
+      // Redirect to portfolio (main dashboard)
+      window.location.replace("/portfolio");
     },
     onError: (error) => {
       setIsLoggingIn(false);

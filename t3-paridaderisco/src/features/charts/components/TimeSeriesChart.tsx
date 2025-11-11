@@ -133,15 +133,15 @@ const formatXAxisLabel = (dateString: string, timeRange: TimeRange): string => {
 
 const formatYAxisLabel = (value: number, isNormalized: boolean): string => {
   if (isNormalized) {
-    return `${value.toFixed(1)}%`;
+    return `${value.toFixed(2)}%`;
   }
-  
+
   // Para valores monetários grandes, usar formato compacto
   if (value >= 1000) {
-    return `R$ ${(value / 1000).toFixed(1)}k`;
+    return `R$ ${(value / 1000).toFixed(2)}k`;
   }
-  
-  return `R$ ${value.toFixed(0)}`;
+
+  return `R$ ${value.toFixed(2)}`;
 };
 
 export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = React.memo(({
@@ -248,10 +248,12 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = React.memo(({
             onMouseDown={enableZoom ? handleZoom : undefined}
           >
             {showGrid && (
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="#e2e8f0" 
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#e5e7eb"
+                strokeOpacity={0.6}
                 vertical={false}
+                horizontalPoints={[0, 20, 40, 60, 80, 100]}
               />
             )}
             
@@ -261,6 +263,8 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = React.memo(({
               tickLine={false}
               tick={{ fontSize: 12, fill: "#64748b" }}
               tickMargin={10}
+              interval="preserveStartEnd"
+              minTickGap={50}
               domain={zoomDomain ? ['dataMin', 'dataMax'] : ['dataMin', 'dataMax']}
             />
             
@@ -270,7 +274,9 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = React.memo(({
               tick={{ fontSize: 12, fill: "#64748b" }}
               tickFormatter={(value) => formatYAxisLabel(value, data.isNormalized || false)}
               width={60}
-              domain={['dataMin - 5', 'dataMax + 5']}
+              domain={['auto', 'auto']}
+              scale="linear"
+              allowDataOverflow={false}
             />
             
             {showTooltip && (
@@ -348,29 +354,35 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = React.memo(({
           onMouseDown={enableZoom ? handleZoom : undefined}
         >
           {showGrid && (
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              stroke="#e2e8f0" 
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e5e7eb"
+              strokeOpacity={0.6}
               vertical={false}
+              horizontalPoints={[0, 20, 40, 60, 80, 100]}
             />
           )}
-          
+
           <XAxis
             dataKey="formattedDate"
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 12, fill: "#64748b" }}
             tickMargin={10}
+            interval="preserveStartEnd"
+            minTickGap={50}
             domain={zoomDomain ? ['dataMin', 'dataMax'] : ['dataMin', 'dataMax']}
           />
-          
+
           <YAxis
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 12, fill: "#64748b" }}
             tickFormatter={(value) => formatYAxisLabel(value, data.isNormalized || false)}
             width={60}
-            domain={['dataMin - 5', 'dataMax + 5']}
+            domain={['auto', 'auto']}
+            scale="linear"
+            allowDataOverflow={false}
           />
           
           {showTooltip && (

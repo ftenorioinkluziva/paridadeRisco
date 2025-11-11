@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Define protected routes that require authentication
-const protectedRoutes = ["/dashboard", "/portfolio", "/transactions", "/baskets"];
+const protectedRoutes = ["/portfolio", "/transactions", "/baskets", "/charts", "/funds", "/admin"];
 
-// Define auth routes that should redirect to dashboard if user is already authenticated
+// Define auth routes that should redirect to portfolio if user is already authenticated
 const authRoutes = ["/login", "/register"];
 
 export function middleware(request: NextRequest) {
@@ -29,9 +29,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
   
-  // If trying to access auth routes with token, redirect to dashboard
+  // If trying to access auth routes with token, redirect to portfolio
   if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/portfolio", request.url));
   }
   
   // Allow the request to continue

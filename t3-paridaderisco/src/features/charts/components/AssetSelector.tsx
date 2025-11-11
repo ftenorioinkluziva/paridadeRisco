@@ -211,17 +211,18 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
             </Button>
           </PopoverTrigger>
           
-          <PopoverContent className="w-[450px] p-0 bg-background border shadow-lg" align="start">
-            <Command shouldFilter={false} className="bg-background">
-              <CommandInput 
-                placeholder="Buscar por ticker ou nome..." 
+          <PopoverContent className="w-[450px] p-0 !bg-white border shadow-lg" align="start" style={{ backgroundColor: '#ffffff' }}>
+            <Command shouldFilter={false} className="!bg-white" style={{ backgroundColor: '#ffffff' }}>
+              <CommandInput
+                placeholder="Buscar por ticker ou nome..."
                 value={searchQuery}
                 onValueChange={setSearchQuery}
-                className="border-none focus:ring-0 bg-background"
+                className="border-none focus:ring-0 !bg-white !text-gray-900"
+                style={{ backgroundColor: '#ffffff', color: '#111827' }}
               />
               <CommandEmpty>
                 <div className="py-6 text-center">
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-gray-600">
                     Nenhum ativo encontrado
                   </div>
                   {(activeTypeFilters.length > 0 || searchQuery) && (
@@ -236,8 +237,8 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                   )}
                 </div>
               </CommandEmpty>
-              
-              <CommandList className="max-h-64 bg-background">
+
+              <CommandList className="max-h-64 !bg-white" style={{ backgroundColor: '#ffffff' }}>
                 {Object.entries(filteredAndGroupedAssets).map(([type, typeAssets]) => (
                   <CommandGroup 
                     key={type} 
@@ -255,7 +256,8 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                         key={asset.id}
                         value={`${asset.ticker} ${asset.name}`}
                         onSelect={() => handleSelect(asset.id)}
-                        className="flex items-center justify-between hover:bg-accent hover:text-accent-foreground transition-colors p-3 cursor-pointer"
+                        style={{ backgroundColor: '#ffffff' }}
+                        className="flex items-center justify-between !bg-white hover:!bg-gray-100 transition-colors p-3 cursor-pointer data-[selected=true]:!bg-gray-100 !text-gray-900"
                       >
                         <div className="flex items-center gap-2">
                           <Check
@@ -268,10 +270,10 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                           />
                           
                           <div className="flex flex-col">
-                            <span className="font-medium">
+                            <span className="font-medium text-gray-900">
                               {asset.ticker}
                             </span>
-                            <span className="text-xs text-muted-foreground truncate max-w-[280px]">
+                            <span className="text-xs text-gray-600 truncate max-w-[280px]">
                               {asset.name}
                             </span>
                           </div>
@@ -288,7 +290,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                             {AssetTypeLabels[asset.type] || asset.type}
                           </Badge>
                           
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <span className="text-xs text-gray-600 whitespace-nowrap">
                             {asset.dataPoints} pts
                           </span>
                         </div>

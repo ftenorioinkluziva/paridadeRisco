@@ -19,7 +19,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row gap-4">
           <Link href="/login">
             <Button size="lg" className="text-lg px-8 py-4">
-              Acessar Dashboard
+              Acessar Plataforma
             </Button>
           </Link>
           <Link href="/register">
