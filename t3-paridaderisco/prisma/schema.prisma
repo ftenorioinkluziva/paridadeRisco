@@ -30,11 +30,12 @@ model User {
   password   String
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-  
-  cestas             Cesta[]
-  portfolio          Portfolio?
-  transacoes         Transacao[]
-  fundosInvestimento FundoInvestimento[]
+
+  cestas                  Cesta[]
+  portfolio               Portfolio?
+  transacoes              Transacao[]
+  fundosInvestimento      FundoInvestimento[]
+  simulacoesAposentadoria SimulacaoAposentadoria[]
 }
 
 model Portfolio {
@@ -107,14 +108,50 @@ model FundoInvestimento {
   investmentDate    DateTime
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
+
   userId            String
   user              User     @relation(fields: [userId], references: [id])
-  
+
   // Associação com índice
   indiceId          String?
   indice            Ativo?   @relation("FundoIndice", fields: [indiceId], references: [id])
-  
+
   @@index([userId])
   @@index([indiceId])
+}
+
+model SimulacaoAposentadoria {
+  id        String   @id @default(cuid())
+  name      String   // Nome da simulação para referência
+
+  // Situação Atual
+  idadeAtual         Int
+  patrimonioInicial  Decimal  @db.Decimal(15, 2)
+  aporteMensal       Decimal  @db.Decimal(12, 2)
+
+  // Objetivos
+  idadeAposentadoria        Int
+  valorReceberAnualDesejado Decimal  @db.Decimal(12, 2)
+  periodoUsufruir           Int
+
+  // Premissas (armazenadas como percentuais: 12.5 para 12.5%)
+  previsaoInflacaoAnual   Decimal  @db.Decimal(5, 2)
+  taxaRealAcumulacao      Decimal  @db.Decimal(5, 2)
+  taxaRealAposentadoria   Decimal  @db.Decimal(5, 2)
+
+  // Resultados Calculados
+  patrimonioNecessario Decimal  @db.Decimal(15, 2)
+  patrimonioAcumulado  Decimal  @db.Decimal(15, 2)
+  valorPrimeiroSaque   Decimal  @db.Decimal(12, 2)
+  resultado            Decimal  @db.Decimal(15, 2) // Superávit (positivo) ou Déficit (negativo)
+  planoViavel          Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
 }

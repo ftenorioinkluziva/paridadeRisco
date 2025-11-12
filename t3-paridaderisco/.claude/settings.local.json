@@ -6,7 +6,8 @@
       "Bash(npx tsx:*)",
       "Read(//c/**)",
       "Bash(npm run build)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma migrate dev:*)"
     ],
     "deny": [],
     "ask": []

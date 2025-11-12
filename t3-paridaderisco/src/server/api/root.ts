@@ -6,6 +6,7 @@ import { cestaRouter } from "~/server/api/routers/cesta";
 import { fundoRouter } from "~/server/api/routers/fundo";
 import { financialRouter } from "~/server/api/routers/financial";
 import { chartsRouter } from "~/server/api/routers/charts";
+import { retirementRouter } from "~/server/api/routers/retirement";
 
 /**
  * This is the primary router for your server.
@@ -20,6 +21,7 @@ export const appRouter = createTRPCRouter({
   fundo: fundoRouter,
   financial: financialRouter,
   charts: chartsRouter,
+  retirement: retirementRouter,
 });
 
 // export type definition of API
