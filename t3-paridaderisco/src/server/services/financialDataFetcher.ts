@@ -159,6 +159,27 @@ export class FinancialDataFetcher {
       const historicalData = [];
       let previousPrice: number | null = null;
 
+      // If startDate is provided (incremental update), get the last price from database
+      if (startDate) {
+        try {
+          const lastRecord = await prisma.dadoHistorico.findFirst({
+            where: {
+              ativo: { ticker },
+              date: { lt: startDate },
+            },
+            orderBy: { date: 'desc' },
+            select: { price: true },
+          });
+
+          if (lastRecord && lastRecord.price !== null) {
+            previousPrice = Number(lastRecord.price);
+            console.log(`Using last database price for ${ticker} incremental update: ${previousPrice.toFixed(4)}`);
+          }
+        } catch (error) {
+          console.warn(`Could not fetch last price from database for ${ticker}:`, error);
+        }
+      }
+
       for (let i = 0; i < timestamps.length; i++) {
         const timestamp = timestamps[i];
         const close = quotes.close[i];
@@ -234,6 +255,27 @@ export class FinancialDataFetcher {
       // 4. Convert prices from USD to BRL
       const historicalDataBRL = [];
       let previousPrice: number | null = null;
+
+      // If startDate is provided (incremental update), get the last price from database
+      if (startDate) {
+        try {
+          const lastRecord = await prisma.dadoHistorico.findFirst({
+            where: {
+              ativo: { ticker },
+              date: { lt: startDate },
+            },
+            orderBy: { date: 'desc' },
+            select: { price: true },
+          });
+
+          if (lastRecord && lastRecord.price !== null) {
+            previousPrice = Number(lastRecord.price);
+            console.log(`Using last database price for ${ticker} incremental update: ${previousPrice.toFixed(4)}`);
+          }
+        } catch (error) {
+          console.warn(`Could not fetch last price from database for ${ticker}:`, error);
+        }
+      }
 
       for (const dataPoint of cryptoDataUSD.historicalData) {
         const dateKey = dataPoint.date.toISOString().split('T')[0];
@@ -378,6 +420,27 @@ export class FinancialDataFetcher {
       const historicalData = [];
       let previousPrice: number | null = null;
 
+      // If startDate is provided (incremental update), get the last price from database
+      if (startDate) {
+        try {
+          const lastRecord = await prisma.dadoHistorico.findFirst({
+            where: {
+              ativo: { ticker: 'IPCA_EXP' },
+              date: { lt: start },
+            },
+            orderBy: { date: 'desc' },
+            select: { price: true },
+          });
+
+          if (lastRecord && lastRecord.price !== null) {
+            previousPrice = Number(lastRecord.price);
+            console.log(`Using last database price for IPCA Expectativa incremental update: ${previousPrice.toFixed(4)}`);
+          }
+        } catch (error) {
+          console.warn('Could not fetch last price from database for IPCA Expectativa:', error);
+        }
+      }
+
       // Convert IPEADATA data format to our format
       for (const record of response.data.value) {
         const recordDate = new Date(record.VALDATA);
@@ -462,6 +525,28 @@ export class FinancialDataFetcher {
       const historicalData = [];
       let cumulativeIndex = 100; // Start with base 100
       let previousPrice: number | null = null;
+
+      // If startDate is provided (incremental update), get the last price from database
+      if (startDate) {
+        try {
+          const lastRecord = await prisma.dadoHistorico.findFirst({
+            where: {
+              ativo: { ticker: 'CDI' },
+              date: { lt: effectiveStart },
+            },
+            orderBy: { date: 'desc' },
+            select: { price: true },
+          });
+
+          if (lastRecord && lastRecord.price !== null) {
+            previousPrice = Number(lastRecord.price);
+            cumulativeIndex = Number(lastRecord.price);
+            console.log(`Using last database price for incremental update: ${previousPrice.toFixed(4)}`);
+          }
+        } catch (error) {
+          console.warn('Could not fetch last price from database:', error);
+        }
+      }
 
       // Process BCB data
       for (const record of response.data) {

@@ -13,6 +13,7 @@ import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AllocationProgressBar } from "./components/AllocationProgressBar";
 import { BasketPerformanceDetail } from "./components/BasketPerformanceDetail";
+import { DateRangeSelector, type DateRange } from "./components/DateRangeSelector";
 import {
   PieChart,
   Plus,
@@ -45,7 +46,7 @@ export function CestaViewer() {
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAssetForAllocation, setSelectedAssetForAllocation] = useState<string | null>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState<'1M' | '3M' | '6M' | '1Y' | 'YTD' | 'ALL'>('3M');
+  const [selectedDateRange, setSelectedDateRange] = useState<DateRange | null>(null);
   const [selectedBasketForAnalysis, setSelectedBasketForAnalysis] = useState<string | null>(null);
 
   // API queries
@@ -621,21 +622,10 @@ export function CestaViewer() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Período de Análise</CardTitle>
-              <CardDescription>Selecione o período para visualizar o desempenho</CardDescription>
+              <CardDescription>Selecione mês, ano ou intervalo customizado</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {(['1M', '3M', '6M', '1Y', 'YTD', 'ALL'] as const).map((period) => (
-                  <Button
-                    key={period}
-                    variant={selectedPeriod === period ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedPeriod(period)}
-                  >
-                    {period === 'ALL' ? 'Tudo' : period}
-                  </Button>
-                ))}
-              </div>
+              <DateRangeSelector onDateRangeChange={setSelectedDateRange} />
             </CardContent>
           </Card>
 
@@ -644,14 +634,9 @@ export function CestaViewer() {
               <CardHeader>
                 <CardTitle>Performance das Cestas</CardTitle>
                 <CardDescription>
-                  Análise comparativa - Período: {
-                    selectedPeriod === '1M' ? 'Último mês' :
-                    selectedPeriod === '3M' ? 'Últimos 3 meses' :
-                    selectedPeriod === '6M' ? 'Últimos 6 meses' :
-                    selectedPeriod === '1Y' ? 'Último ano' :
-                    selectedPeriod === 'YTD' ? 'Ano corrente' :
-                    'Desde o início'
-                  }
+                  {selectedDateRange
+                    ? `Análise comparativa - Período: ${selectedDateRange.startDate.toLocaleDateString('pt-BR')} até ${selectedDateRange.endDate.toLocaleDateString('pt-BR')}`
+                    : 'Selecione um período para visualizar a análise'}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -674,13 +659,16 @@ export function CestaViewer() {
                       );
                     }
 
+                    // Don't show if no period selected
+                    if (!selectedDateRange) return null;
+
                     return (
                       <BasketPerformanceRow
                         key={cesta.id}
                         cestaId={cesta.id}
                         cestaName={cesta.name}
                         ativosCount={cesta.ativos.length}
-                        period={selectedPeriod}
+                        dateRange={selectedDateRange}
                         onClick={() => setSelectedBasketForAnalysis(cesta.id)}
                         isSelected={selectedBasketForAnalysis === cesta.id}
                       />
@@ -722,7 +710,12 @@ export function CestaViewer() {
           </div>
 
           {/* Detailed Analysis View */}
-          {selectedBasketForAnalysis && <BasketDetailedAnalysis cestaId={selectedBasketForAnalysis} period={selectedPeriod} />}
+          {selectedBasketForAnalysis && selectedDateRange && (
+            <BasketDetailedAnalysis
+              cestaId={selectedBasketForAnalysis}
+              dateRange={selectedDateRange}
+            />
+          )}
         </TabsContent>
       </Tabs>
     </div>
@@ -734,14 +727,18 @@ interface BasketPerformanceRowProps {
   cestaId: string;
   cestaName: string;
   ativosCount: number;
-  period: '1M' | '3M' | '6M' | '1Y' | 'YTD' | 'ALL';
+  dateRange: DateRange;
   onClick?: () => void;
   isSelected?: boolean;
 }
 
-function BasketPerformanceRow({ cestaId, cestaName, ativosCount, period, onClick, isSelected }: BasketPerformanceRowProps) {
+function BasketPerformanceRow({ cestaId, cestaName, ativosCount, dateRange, onClick, isSelected }: BasketPerformanceRowProps) {
   const performanceQuery = api.cesta.getPerformance.useQuery(
-    { cestaId, period },
+    {
+      cestaId,
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+    },
     { retry: false }
   );
 
@@ -815,11 +812,15 @@ function BasketPerformanceRow({ cestaId, cestaName, ativosCount, period, onClick
 // Component to fetch and display detailed basket analysis
 interface BasketDetailedAnalysisProps {
   cestaId: string;
-  period: '1M' | '3M' | '6M' | '1Y' | 'YTD' | 'ALL';
+  dateRange: DateRange;
 }
 
-function BasketDetailedAnalysis({ cestaId, period }: BasketDetailedAnalysisProps) {
-  const performanceQuery = api.cesta.getPerformance.useQuery({ cestaId, period });
+function BasketDetailedAnalysis({ cestaId, dateRange }: BasketDetailedAnalysisProps) {
+  const performanceQuery = api.cesta.getPerformance.useQuery({
+    cestaId,
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate,
+  });
   const cestaQuery = api.cesta.getById.useQuery({ id: cestaId });
 
   if (performanceQuery.isLoading || cestaQuery.isLoading) {

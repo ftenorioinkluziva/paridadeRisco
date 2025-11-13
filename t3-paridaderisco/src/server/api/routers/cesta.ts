@@ -478,7 +478,15 @@ export const cestaRouter = createTRPCRouter({
     .input(
       z.object({
         cestaId: z.string(),
-        period: z.enum(['1M', '3M', '6M', '1Y', 'YTD', 'ALL']),
+        // Allow either predefined period or custom dates
+        period: z.enum(['1M', '3M', '6M', '1Y', 'YTD', 'ALL']).optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+      }).refine((data) => {
+        // Must have either period OR both custom dates
+        return data.period || (data.startDate && data.endDate);
+      }, {
+        message: "Must provide either period or both startDate and endDate"
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -520,8 +528,14 @@ export const cestaRouter = createTRPCRouter({
         });
       }
 
-      // Get period dates
-      const periodDates = getPeriodDates(input.period as PerformancePeriod);
+      // Get period dates - either from predefined period or custom dates
+      const periodDates = input.period
+        ? getPeriodDates(input.period as PerformancePeriod)
+        : {
+            startDate: input.startDate!,
+            endDate: input.endDate!,
+            label: `${input.startDate!.toLocaleDateString('pt-BR')} - ${input.endDate!.toLocaleDateString('pt-BR')}`
+          };
 
       // Calculate returns for each asset
       const assetReturns: AssetReturn[] = [];

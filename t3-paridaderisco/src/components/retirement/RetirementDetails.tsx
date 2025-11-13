@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "~/components/ui/card";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { CheckCircle2, XCircle, Save } from "lucide-react";
 
 interface RetirementDetailsProps {
   simulationResult: {
@@ -35,9 +36,11 @@ interface RetirementDetailsProps {
     patrimonioFinal: number;
     patrimonioMaximo: number;
   };
+  onSave: () => void;
+  isSaving: boolean;
 }
 
-export function RetirementDetails({ simulationResult, evolucaoPatrimonio }: RetirementDetailsProps) {
+export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave, isSaving }: RetirementDetailsProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -194,6 +197,14 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio }: Reti
               </p>
             )}
           </div>
+        </div>
+
+        {/* Botão Salvar */}
+        <div className="flex justify-end pt-2">
+          <Button onClick={onSave} disabled={isSaving} variant="outline">
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? "Salvando..." : "Salvar"}
+          </Button>
         </div>
 
         {/* Resumo Detalhado */}

@@ -283,33 +283,12 @@ export default function RetirementPage() {
         <div className="space-y-4">
           {simulationResult ? (
             <>
-              {/* Veredito */}
-              <div className={`p-3 rounded-lg flex items-center justify-between ${simulationResult.planoViavel ? "bg-green-50" : "bg-red-50"}`}>
-                <div className="flex items-center gap-3">
-                  {simulationResult.planoViavel ? (
-                    <TrendingUp className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-5 w-5 text-red-600" />
-                  )}
-                  <div>
-                    <h3 className={`font-semibold ${simulationResult.planoViavel ? "text-green-600" : "text-red-600"}`}>
-                      {simulationResult.planoViavel ? "Plano Viável" : "Plano Insuficiente"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {simulationResult.planoViavel ? "Superávit" : "Déficit"} de {formatCurrency(Math.abs(simulationResult.resultado))}
-                    </p>
-                  </div>
-                </div>
-                <Button onClick={onSave} disabled={isSaving} size="sm" variant="outline">
-                  <Save className="h-4 w-4 mr-2" />
-                  {isSaving ? "Salvando..." : "Salvar"}
-                </Button>
-              </div>
-
               {/* Detalhes */}
               <RetirementDetails
                 simulationResult={simulationResult}
                 evolucaoPatrimonio={calcularEvolucaoPatrimonio(simulationResult.inputData)}
+                onSave={onSave}
+                isSaving={isSaving}
               />
             </>
           ) : (
