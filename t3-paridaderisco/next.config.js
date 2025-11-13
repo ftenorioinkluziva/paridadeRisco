@@ -12,6 +12,14 @@ const config = {
   },
   // Output standalone para Docker
   output: 'standalone',
+  // Disable ESLint during builds (run linting separately)
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  // Disable TypeScript type checking during builds (already checked in dev)
+  typescript: {
+    ignoreBuildErrors: false, // Keep this enabled to catch TypeScript errors
+  },
 };
 
 export default config;

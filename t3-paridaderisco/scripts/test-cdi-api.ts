@@ -40,17 +40,21 @@ async function testCDIApi() {
       const first = testData.historicalData[0];
       const last = testData.historicalData[testData.historicalData.length - 1];
 
-      const accumulatedReturn = ((last.price / first.price - 1) * 100);
+      if (first.price && last.price) {
+        const accumulatedReturn = ((last.price / first.price - 1) * 100);
 
-      console.log(`✅ Período: ${first.date.toLocaleDateString('pt-BR')} a ${last.date.toLocaleDateString('pt-BR')}`);
-      console.log(`   Registros: ${testData.historicalData.length}`);
-      console.log(`   Retorno acumulado: ${accumulatedReturn.toFixed(6)}%`);
-      console.log(`   Esperado: ~0.385917%`);
+        console.log(`✅ Período: ${first.date.toLocaleDateString('pt-BR')} a ${last.date.toLocaleDateString('pt-BR')}`);
+        console.log(`   Registros: ${testData.historicalData.length}`);
+        console.log(`   Retorno acumulado: ${accumulatedReturn.toFixed(6)}%`);
+        console.log(`   Esperado: ~0.385917%`);
 
-      if (Math.abs(accumulatedReturn - 0.385917) < 0.01) {
-        console.log('   ✅ Cálculo correto!\n');
+        if (Math.abs(accumulatedReturn - 0.385917) < 0.01) {
+          console.log('   ✅ Cálculo correto!\n');
+        } else {
+          console.log('   ⚠️  Diferença encontrada, mas pode ser esperado devido a dados reais\n');
+        }
       } else {
-        console.log('   ⚠️  Diferença encontrada, mas pode ser esperado devido a dados reais\n');
+        console.log('❌ Dados com valores nulos encontrados\n');
       }
     } else {
       console.log('❌ Falha ao buscar dados de teste\n');
