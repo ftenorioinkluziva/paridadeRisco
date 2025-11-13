@@ -26,7 +26,7 @@ interface ComparisonChartProps {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{
+  payload?: ReadonlyArray<{
     value: number;
     dataKey: string;
     color: string;
@@ -73,7 +73,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
         <p className="font-medium text-foreground mb-2">{formattedDate}</p>
         
         <div className="space-y-1">
-          {payload
+          {[...payload]
             .sort((a, b) => b.value - a.value) // Ordenar por valor decrescente
             .map((entry, index) => (
               <div key={index} className="flex items-center justify-between gap-3">

@@ -28,7 +28,7 @@ interface TimeSeriesChartProps {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{
+  payload?: ReadonlyArray<{
     value: number;
     payload: {
       date: string;
