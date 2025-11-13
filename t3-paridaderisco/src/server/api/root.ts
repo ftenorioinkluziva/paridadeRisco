@@ -1,5 +1,6 @@
 import { createTRPCRouter } from "~/server/api/trpc";
 import { authRouter } from "~/server/api/routers/auth";
+import { userRouter } from "~/server/api/routers/user";
 import { assetRouter } from "~/server/api/routers/asset";
 import { portfolioRouter } from "~/server/api/routers/portfolio";
 import { cestaRouter } from "~/server/api/routers/cesta";
@@ -15,6 +16,7 @@ import { retirementRouter } from "~/server/api/routers/retirement";
  */
 export const appRouter = createTRPCRouter({
   auth: authRouter,
+  user: userRouter,
   asset: assetRouter,
   portfolio: portfolioRouter,
   cesta: cestaRouter,

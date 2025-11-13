@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +12,11 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/lib/api";
-import { Calculator, TrendingUp, TrendingDown, AlertCircle, Save, HelpCircle } from "lucide-react";
+import { Calculator, TrendingUp, TrendingDown, AlertCircle, Save, HelpCircle, Loader2 } from "lucide-react";
+import { calcularIdade } from "~/lib/utils/date";
+import { RetirementCharts } from "~/components/retirement/RetirementCharts";
+import { RetirementDetails } from "~/components/retirement/RetirementDetails";
+import { calcularEvolucaoPatrimonio } from "~/lib/utils/retirementCalculations";
 
 const retirementSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -25,6 +29,7 @@ const retirementSchema = z.object({
   previsaoInflacaoAnual: z.number().min(0).max(100),
   taxaRealAcumulacao: z.number().min(-10).max(100),
   taxaRealAposentadoria: z.number().min(-10).max(100),
+  aliquotaIR: z.number().min(0, "Mínimo 0%").max(100, "Máximo 100%"),
 });
 
 type RetirementForm = z.infer<typeof retirementSchema>;
@@ -32,25 +37,61 @@ type RetirementForm = z.infer<typeof retirementSchema>;
 export default function RetirementPage() {
   const [simulationResult, setSimulationResult] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<RetirementForm>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<RetirementForm>({
     resolver: zodResolver(retirementSchema),
     defaultValues: {
       name: "Minha Simulação",
-      idadeAtual: 44,
-      patrimonioInicial: 82000,
+      idadeAtual: 30,
+      patrimonioInicial: 0,
       aporteMensal: 2000,
-      idadeAposentadoria: 70,
+      idadeAposentadoria: 65,
       valorReceberAnualDesejado: 120000,
       periodoUsufruir: 30,
       previsaoInflacaoAnual: 4.5,
       taxaRealAcumulacao: 12,
       taxaRealAposentadoria: 7,
+      aliquotaIR: 15,
     },
   });
 
+  // Fetch user profile for age
+  const { data: userProfile } = api.user.getUserProfile.useQuery();
+
+  // Fetch portfolio value
+  const { data: portfolioValue } = api.retirement.getUserPortfolioValue.useQuery();
+
+  // Fetch market premises (IPCA)
+  const { data: marketPremises } = api.retirement.getMarketPremises.useQuery();
+
   const simulateMutation = api.retirement.simulate.useMutation();
   const createMutation = api.retirement.create.useMutation();
+
+  // Auto-fill form with real data
+  useEffect(() => {
+    setIsLoadingData(true);
+
+    // Set age from user profile
+    if (userProfile?.dataNascimento) {
+      const idade = calcularIdade(userProfile.dataNascimento);
+      if (idade) {
+        setValue("idadeAtual", idade);
+      }
+    }
+
+    // Set portfolio value
+    if (portfolioValue?.valorTotal) {
+      setValue("patrimonioInicial", portfolioValue.valorTotal);
+    }
+
+    // Set inflation from IPCA_EXP data
+    if (marketPremises?.expectativaInflacao12M) {
+      setValue("previsaoInflacaoAnual", marketPremises.expectativaInflacao12M);
+    }
+
+    setIsLoadingData(false);
+  }, [userProfile, portfolioValue, marketPremises, setValue]);
 
   const onSimulate = async (data: RetirementForm) => {
     try {
@@ -94,100 +135,135 @@ export default function RetirementPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Formulário */}
         <Card>
-          <CardHeader>
-            <CardTitle>Dados da Simulação</CardTitle>
-            <CardDescription>Preencha os campos abaixo para simular seu plano</CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Dados da Simulação</CardTitle>
+            <CardDescription className="text-xs">Preencha os campos abaixo</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <form onSubmit={handleSubmit(onSimulate)} className="space-y-6">
+          <CardContent className="pt-3">
+            <form onSubmit={handleSubmit(onSimulate)} className="space-y-4">
               {/* Nome */}
               <div>
-                <Label htmlFor="name">Nome da Simulação</Label>
-                <Input id="name" {...register("name")} />
-                {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
+                <Label htmlFor="name" className="text-xs">Nome da Simulação</Label>
+                <Input id="name" {...register("name")} className="h-9" />
+                {errors.name && <p className="text-xs text-red-600 mt-0.5">{errors.name.message}</p>}
               </div>
 
               {/* Situação Atual */}
-              <div className="space-y-4 p-3 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-sm">
+              <div className="space-y-3 p-2.5 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-xs text-gray-700">
                   Situação Atual
                 </h3>
 
-                <div>
-                  <Label htmlFor="idadeAtual">Idade Atual</Label>
-                  <Input id="idadeAtual" type="number" {...register("idadeAtual", { valueAsNumber: true })} />
-                  {errors.idadeAtual && <p className="text-sm text-red-600 mt-1">{errors.idadeAtual.message}</p>}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="idadeAtual" className="text-xs">
+                      Idade Atual
+                      {userProfile?.dataNascimento && (
+                        <span className="text-[10px] text-green-600 ml-1">
+                          (perfil)
+                        </span>
+                      )}
+                    </Label>
+                    <Input id="idadeAtual" type="number" {...register("idadeAtual", { valueAsNumber: true })} className="h-9" />
+                    {errors.idadeAtual && <p className="text-xs text-red-600 mt-0.5">{errors.idadeAtual.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="aporteMensal" className="text-xs">Aporte Mensal (R$)</Label>
+                    <Input id="aporteMensal" type="number" step="0.01" {...register("aporteMensal", { valueAsNumber: true })} className="h-9" />
+                    {errors.aporteMensal && <p className="text-xs text-red-600 mt-0.5">{errors.aporteMensal.message}</p>}
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="patrimonioInicial">Património Inicial (R$)</Label>
-                  <Input id="patrimonioInicial" type="number" step="0.01" {...register("patrimonioInicial", { valueAsNumber: true })} />
-                  {errors.patrimonioInicial && <p className="text-sm text-red-600 mt-1">{errors.patrimonioInicial.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="aporteMensal">Aporte Mensal (R$)</Label>
-                  <Input id="aporteMensal" type="number" step="0.01" {...register("aporteMensal", { valueAsNumber: true })} />
-                  {errors.aporteMensal && <p className="text-sm text-red-600 mt-1">{errors.aporteMensal.message}</p>}
+                  <Label htmlFor="patrimonioInicial" className="text-xs">
+                    Património Inicial
+                    {portfolioValue && (
+                      <span className="text-[10px] text-green-600 ml-1">
+                        ({formatCurrency(portfolioValue.valorTotal)})
+                      </span>
+                    )}
+                  </Label>
+                  <Input id="patrimonioInicial" type="number" step="0.01" {...register("patrimonioInicial", { valueAsNumber: true })} className="h-9" />
+                  {errors.patrimonioInicial && <p className="text-xs text-red-600 mt-0.5">{errors.patrimonioInicial.message}</p>}
                 </div>
               </div>
 
               {/* Objetivos */}
-              <div className="space-y-4 p-3 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-sm">
+              <div className="space-y-3 p-2.5 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-xs text-gray-700">
                   Objetivos de Aposentadoria
                 </h3>
 
-                <div>
-                  <Label htmlFor="idadeAposentadoria">Idade de Aposentadoria</Label>
-                  <Input id="idadeAposentadoria" type="number" {...register("idadeAposentadoria", { valueAsNumber: true })} />
-                  {errors.idadeAposentadoria && <p className="text-sm text-red-600 mt-1">{errors.idadeAposentadoria.message}</p>}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="idadeAposentadoria" className="text-xs">Idade Aposentadoria</Label>
+                    <Input id="idadeAposentadoria" type="number" {...register("idadeAposentadoria", { valueAsNumber: true })} className="h-9" />
+                    {errors.idadeAposentadoria && <p className="text-xs text-red-600 mt-0.5">{errors.idadeAposentadoria.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="periodoUsufruir" className="text-xs">Período (anos)</Label>
+                    <Input id="periodoUsufruir" type="number" {...register("periodoUsufruir", { valueAsNumber: true })} className="h-9" />
+                    {errors.periodoUsufruir && <p className="text-xs text-red-600 mt-0.5">{errors.periodoUsufruir.message}</p>}
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="valorReceberAnualDesejado">
-                    Valor Anual Desejado (R$)
-                    <span className="text-xs text-muted-foreground ml-2">(em R$ de hoje)</span>
+                  <Label htmlFor="valorReceberAnualDesejado" className="text-xs">
+                    Valor Anual Desejado
+                    <span className="text-[10px] text-muted-foreground ml-1">(R$ de hoje)</span>
                   </Label>
-                  <Input id="valorReceberAnualDesejado" type="number" step="0.01" {...register("valorReceberAnualDesejado", { valueAsNumber: true })} />
-                  {errors.valorReceberAnualDesejado && <p className="text-sm text-red-600 mt-1">{errors.valorReceberAnualDesejado.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="periodoUsufruir">Período de Usufruto (anos)</Label>
-                  <Input id="periodoUsufruir" type="number" {...register("periodoUsufruir", { valueAsNumber: true })} />
-                  {errors.periodoUsufruir && <p className="text-sm text-red-600 mt-1">{errors.periodoUsufruir.message}</p>}
+                  <Input id="valorReceberAnualDesejado" type="number" step="0.01" {...register("valorReceberAnualDesejado", { valueAsNumber: true })} className="h-9" />
+                  {errors.valorReceberAnualDesejado && <p className="text-xs text-red-600 mt-0.5">{errors.valorReceberAnualDesejado.message}</p>}
                 </div>
               </div>
 
               {/* Premissas */}
-              <div className="space-y-4 p-3 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-sm">
+              <div className="space-y-3 p-2.5 bg-gray-50 rounded-lg">
+                <h3 className="font-semibold text-xs text-gray-700">
                   Premissas de Mercado (% ao ano)
                 </h3>
 
-                <div>
-                  <Label htmlFor="previsaoInflacaoAnual">Previsão de Inflação (%)</Label>
-                  <Input id="previsaoInflacaoAnual" type="number" step="0.01" {...register("previsaoInflacaoAnual", { valueAsNumber: true })} />
-                  {errors.previsaoInflacaoAnual && <p className="text-sm text-red-600 mt-1">{errors.previsaoInflacaoAnual.message}</p>}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="previsaoInflacaoAnual" className="text-xs">
+                      Inflação
+                      {marketPremises && (
+                        <span className="text-[10px] text-green-600 ml-1">
+                          ({marketPremises.expectativaInflacao12M.toFixed(1)}%)
+                        </span>
+                      )}
+                    </Label>
+                    <Input id="previsaoInflacaoAnual" type="number" step="0.01" {...register("previsaoInflacaoAnual", { valueAsNumber: true })} className="h-9" />
+                    {errors.previsaoInflacaoAnual && <p className="text-xs text-red-600 mt-0.5">{errors.previsaoInflacaoAnual.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="aliquotaIR" className="text-xs">
+                      IR Rendimentos
+                    </Label>
+                    <Input id="aliquotaIR" type="number" step="0.01" {...register("aliquotaIR", { valueAsNumber: true })} className="h-9" />
+                    {errors.aliquotaIR && <p className="text-xs text-red-600 mt-0.5">{errors.aliquotaIR.message}</p>}
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="taxaRealAcumulacao">
-                    Taxa Real Acumulação (%)
-                    <span className="text-xs text-muted-foreground ml-2">(acima da inflação)</span>
-                  </Label>
-                  <Input id="taxaRealAcumulacao" type="number" step="0.01" {...register("taxaRealAcumulacao", { valueAsNumber: true })} />
-                  {errors.taxaRealAcumulacao && <p className="text-sm text-red-600 mt-1">{errors.taxaRealAcumulacao.message}</p>}
-                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="taxaRealAcumulacao" className="text-xs">
+                      Taxa Acumulação
+                    </Label>
+                    <Input id="taxaRealAcumulacao" type="number" step="0.01" {...register("taxaRealAcumulacao", { valueAsNumber: true })} className="h-9" />
+                    {errors.taxaRealAcumulacao && <p className="text-xs text-red-600 mt-0.5">{errors.taxaRealAcumulacao.message}</p>}
+                  </div>
 
-                <div>
-                  <Label htmlFor="taxaRealAposentadoria">
-                    Taxa Real Aposentadoria (%)
-                    <span className="text-xs text-muted-foreground ml-2">(acima da inflação)</span>
-                  </Label>
-                  <Input id="taxaRealAposentadoria" type="number" step="0.01" {...register("taxaRealAposentadoria", { valueAsNumber: true })} />
-                  {errors.taxaRealAposentadoria && <p className="text-sm text-red-600 mt-1">{errors.taxaRealAposentadoria.message}</p>}
+                  <div>
+                    <Label htmlFor="taxaRealAposentadoria" className="text-xs">
+                      Taxa Aposentadoria
+                    </Label>
+                    <Input id="taxaRealAposentadoria" type="number" step="0.01" {...register("taxaRealAposentadoria", { valueAsNumber: true })} className="h-9" />
+                    {errors.taxaRealAposentadoria && <p className="text-xs text-red-600 mt-0.5">{errors.taxaRealAposentadoria.message}</p>}
+                  </div>
                 </div>
               </div>
 
@@ -231,29 +307,10 @@ export default function RetirementPage() {
               </div>
 
               {/* Detalhes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Detalhes da Simulação</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <span className="font-medium">Património Necessário (Meta)</span>
-                    <span className="font-bold">{formatCurrency(simulationResult.patrimonioNecessario)}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Património Acumulado (Projeção)</span>
-                    <span className="font-bold">{formatCurrency(simulationResult.patrimonioAcumulado)}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Valor do 1º Saque (Corrigido)</span>
-                    <span className="font-bold">{formatCurrency(simulationResult.valorPrimeiroSaque)}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground p-3 border-t">
-                    <p>Valor necessário para bancar {formatCurrency(simulationResult.valorPrimeiroSaque)}/ano por {simulationResult.inputData.periodoUsufruir} anos</p>
-                    <p className="mt-1">Projeção com {formatCurrency(simulationResult.inputData.patrimonioInicial)} inicial + {formatCurrency(simulationResult.inputData.aporteMensal)}/mês por {simulationResult.anosAcumulacao} anos</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <RetirementDetails
+                simulationResult={simulationResult}
+                evolucaoPatrimonio={calcularEvolucaoPatrimonio(simulationResult.inputData)}
+              />
             </>
           ) : (
             <Card>
@@ -265,6 +322,11 @@ export default function RetirementPage() {
           )}
         </div>
       </div>
+
+      {/* Gráficos de Evolução */}
+      {simulationResult && simulationResult.inputData && (
+        <RetirementCharts inputData={simulationResult.inputData} />
+      )}
     </div>
   );
 }

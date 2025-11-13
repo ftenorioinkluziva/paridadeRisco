@@ -1,7 +1,7 @@
 "use client";
 
 import { MainNav } from "./MainNav";
-import { UserNav } from "./UserNav";
+import { UserDropdown } from "./UserDropdown";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function Header() {
@@ -17,7 +17,7 @@ export function Header() {
         </div>
         <div className="ml-auto flex items-center space-x-4">
           <ThemeToggle />
-          <UserNav />
+          <UserDropdown />
         </div>
       </div>
     </div>

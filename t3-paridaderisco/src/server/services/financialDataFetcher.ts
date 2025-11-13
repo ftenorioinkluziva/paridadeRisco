@@ -41,10 +41,8 @@ interface YahooFinanceResponse {
 }
 
 interface BCBResponse {
-  value: Array<{
-    data: string;
-    valor: string;
-  }>;
+  data: string;
+  valor: string;
 }
 
 interface BCBIPCAResponse {
@@ -427,27 +425,55 @@ export class FinancialDataFetcher {
 
   async fetchBCBData(seriesCode: number = this.CDI_SERIES_CODE, startDate?: Date, endDate?: Date): Promise<AssetData | null> {
     try {
-      // For now, let's generate synthetic CDI data based on SELIC
-      // This is a temporary solution until we find a working BCB API endpoint
-      console.log(`Generating synthetic CDI data based on SELIC...`);
-      
       const now = new Date();
-      const start = startDate || new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+      const start = startDate || new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
       const end = endDate || now;
+
+      // BCB API has a 10-year maximum window
+      const tenYearsAgo = new Date(end);
+      tenYearsAgo.setFullYear(end.getFullYear() - 10);
+      const effectiveStart = start < tenYearsAgo ? tenYearsAgo : start;
+
+      console.log(`Fetching CDI data from BCB API (series ${seriesCode})...`);
+      console.log(`Date range: ${this.formatDateForBCB(effectiveStart)} to ${this.formatDateForBCB(end)}`);
+
+      const url = `http://api.bcb.gov.br/dados/serie/bcdata.sgs.${seriesCode}/dados`;
+      const params = {
+        formato: 'json',
+        dataInicial: this.formatDateForBCB(effectiveStart),
+        dataFinal: this.formatDateForBCB(end),
+      };
+
+      const response = await axios.get<BCBResponse[]>(url, {
+        params,
+        timeout: 30000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+
+      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+        console.error('No CDI data returned from BCB API');
+        return null;
+      }
+
+      console.log(`Received ${response.data.length} CDI records from BCB`);
 
       const historicalData = [];
       let cumulativeIndex = 100; // Start with base 100
       let previousPrice: number | null = null;
-      
-      // Generate daily CDI data (simplified)
-      const currentDate = new Date(start);
-      const dailyCDIRate = 0.0351; // Approximate current CDI rate (3.51% yearly)
-      const dailyRate = Math.pow(1 + dailyCDIRate, 1/252) - 1; // Convert to daily
-      
-      while (currentDate <= end) {
-        // Skip weekends
-        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
-          cumulativeIndex = cumulativeIndex * (1 + dailyRate);
+
+      // Process BCB data
+      for (const record of response.data) {
+        const [day, month, year] = record.data.split('/');
+        const recordDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+        const dailyRate = parseFloat(record.valor); // Daily percentage (e.g., 0.055131 = 0.055131%)
+
+        if (!isNaN(dailyRate)) {
+          // Calculate cumulative index: multiply by (1 + daily rate)
+          // The valor from BCB is already in percentage divided by 100 (0.055131 = 0.055131%)
+          cumulativeIndex = cumulativeIndex * (1 + dailyRate / 100);
           const price = cumulativeIndex;
 
           let percentageChange: number | null = null;
@@ -456,15 +482,25 @@ export class FinancialDataFetcher {
           }
 
           historicalData.push({
-            date: new Date(currentDate),
+            date: recordDate,
             price,
             percentageChange,
           });
 
           previousPrice = price;
         }
-        
-        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Sort by date ascending
+      historicalData.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+      console.log(`Successfully processed ${historicalData.length} CDI records`);
+
+      if (historicalData.length > 0) {
+        const firstRecord = historicalData[0];
+        const lastRecord = historicalData[historicalData.length - 1];
+        const totalReturn = ((lastRecord.price / firstRecord.price - 1) * 100).toFixed(4);
+        console.log(`CDI accumulated return: ${totalReturn}% (from ${firstRecord.price.toFixed(2)} to ${lastRecord.price.toFixed(2)})`);
       }
 
       return {
@@ -477,7 +513,7 @@ export class FinancialDataFetcher {
       };
 
     } catch (error) {
-      console.error(`Error generating CDI data:`, error);
+      console.error(`Error fetching CDI data from BCB:`, error);
       return null;
     }
   }

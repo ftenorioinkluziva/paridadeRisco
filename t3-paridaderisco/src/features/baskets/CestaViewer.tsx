@@ -12,6 +12,7 @@ import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { AllocationProgressBar } from "./components/AllocationProgressBar";
+import { BasketPerformanceDetail } from "./components/BasketPerformanceDetail";
 import {
   PieChart,
   Plus,
@@ -22,7 +23,8 @@ import {
   BarChart3,
   Search,
   Check,
-  Percent
+  Percent,
+  ChevronRight
 } from "lucide-react";
 
 const basketSchema = z.object({
@@ -43,6 +45,8 @@ export function CestaViewer() {
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAssetForAllocation, setSelectedAssetForAllocation] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<'1M' | '3M' | '6M' | '1Y' | 'YTD' | 'ALL'>('3M');
+  const [selectedBasketForAnalysis, setSelectedBasketForAnalysis] = useState<string | null>(null);
 
   // API queries
   const cestasQuery = api.cesta.list.useQuery();
@@ -139,6 +143,10 @@ export function CestaViewer() {
     return assetsQuery.data?.find(a => a.id === selectedAssetForAllocation);
   }, [selectedAssetForAllocation, assetsQuery.data]);
 
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
 
   return (
     <div className="space-y-6">
@@ -609,32 +617,76 @@ export function CestaViewer() {
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-4">
+          {/* Period Selector */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Período de Análise</CardTitle>
+              <CardDescription>Selecione o período para visualizar o desempenho</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {(['1M', '3M', '6M', '1Y', 'YTD', 'ALL'] as const).map((period) => (
+                  <Button
+                    key={period}
+                    variant={selectedPeriod === period ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedPeriod(period)}
+                  >
+                    {period === 'ALL' ? 'Tudo' : period}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Performance das Cestas</CardTitle>
-                <CardDescription>Análise comparativa</CardDescription>
+                <CardDescription>
+                  Análise comparativa - Período: {
+                    selectedPeriod === '1M' ? 'Último mês' :
+                    selectedPeriod === '3M' ? 'Últimos 3 meses' :
+                    selectedPeriod === '6M' ? 'Últimos 6 meses' :
+                    selectedPeriod === '1Y' ? 'Último ano' :
+                    selectedPeriod === 'YTD' ? 'Ano corrente' :
+                    'Desde o início'
+                  }
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {cestasQuery.data?.map((cesta) => (
-                    <div key={cesta.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{cesta.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {cesta.ativos?.length || 0} ativos
+                  {cestasQuery.data?.map((cesta) => {
+                    // Only show performance if basket has assets
+                    if (!cesta.ativos || cesta.ativos.length === 0) {
+                      return (
+                        <div key={cesta.id} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                          <div>
+                            <div className="font-medium">{cesta.name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Sem ativos alocados
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-muted-foreground">N/A</div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center space-x-2">
-                          <TrendingUp className="h-4 w-4 text-green-600" />
-                          <span className="text-green-600 font-semibold">+0.00%</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">Simulado</div>
-                      </div>
-                    </div>
-                  ))}
-                  
+                      );
+                    }
+
+                    return (
+                      <BasketPerformanceRow
+                        key={cesta.id}
+                        cestaId={cesta.id}
+                        cestaName={cesta.name}
+                        ativosCount={cesta.ativos.length}
+                        period={selectedPeriod}
+                        onClick={() => setSelectedBasketForAnalysis(cesta.id)}
+                        isSelected={selectedBasketForAnalysis === cesta.id}
+                      />
+                    );
+                  })}
+
                   {(!cestasQuery.data || cestasQuery.data.length === 0) && (
                     <div className="text-center p-8 text-muted-foreground">
                       <BarChart3 className="mx-auto h-12 w-12 mb-4" />
@@ -647,19 +699,148 @@ export function CestaViewer() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Diversificação</CardTitle>
-                <CardDescription>Análise de risco das cestas</CardDescription>
+                <CardTitle>Instruções</CardTitle>
+                <CardDescription>Como visualizar análises detalhadas</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center p-8 text-muted-foreground">
-                  <Target className="mx-auto h-12 w-12 mb-4" />
-                  <p>Análise de diversificação em desenvolvimento</p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="h-5 w-5 text-primary mt-0.5" />
+                    <p>Clique em uma cesta para ver análise detalhada com gráficos e métricas</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="h-5 w-5 text-primary mt-0.5" />
+                    <p>Altere o período no seletor acima para ver diferentes horizontes temporais</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <ChevronRight className="h-5 w-5 text-primary mt-0.5" />
+                    <p>Compare a performance da cesta com CDI e IPCA</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Detailed Analysis View */}
+          {selectedBasketForAnalysis && <BasketDetailedAnalysis cestaId={selectedBasketForAnalysis} period={selectedPeriod} />}
         </TabsContent>
       </Tabs>
     </div>
   );
+}
+
+// Separate component for basket performance row to handle individual query
+interface BasketPerformanceRowProps {
+  cestaId: string;
+  cestaName: string;
+  ativosCount: number;
+  period: '1M' | '3M' | '6M' | '1Y' | 'YTD' | 'ALL';
+  onClick?: () => void;
+  isSelected?: boolean;
+}
+
+function BasketPerformanceRow({ cestaId, cestaName, ativosCount, period, onClick, isSelected }: BasketPerformanceRowProps) {
+  const performanceQuery = api.cesta.getPerformance.useQuery(
+    { cestaId, period },
+    { retry: false }
+  );
+
+  const formatPercent = (value: number) => `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+  const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
+  if (performanceQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-between p-3 border rounded-lg">
+        <div>
+          <div className="font-medium">{cestaName}</div>
+          <div className="text-sm text-muted-foreground">{ativosCount} ativos</div>
+        </div>
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (performanceQuery.error) {
+    return (
+      <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
+        <div>
+          <div className="font-medium">{cestaName}</div>
+          <div className="text-sm text-muted-foreground">{ativosCount} ativos</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-red-600">Erro ao calcular</div>
+          <div className="text-xs text-muted-foreground">Dados insuficientes</div>
+        </div>
+      </div>
+    );
+  }
+
+  const performance = performanceQuery.data;
+  if (!performance) return null;
+
+  const isPositive = performance.retornoPercentual >= 0;
+
+  return (
+    <div
+      className={`flex items-center justify-between p-3 border-2 rounded-lg hover:shadow-md transition-all cursor-pointer ${
+        isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50'
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{cestaName}</span>
+          {isSelected && <ChevronRight className="h-4 w-4 text-primary" />}
+        </div>
+        <div className="text-sm text-muted-foreground">{ativosCount} ativos</div>
+        {!performance.temDadosSuficientes && (
+          <div className="text-xs text-yellow-600 mt-1">⚠️ Dados parciais</div>
+        )}
+      </div>
+      <div className="text-right space-y-1">
+        <div className="flex items-center space-x-2">
+          <TrendingUp className={`h-4 w-4 ${isPositive ? 'text-green-600' : 'text-red-600'}`} />
+          <span className={`${isPositive ? 'text-green-600' : 'text-red-600'} font-semibold text-lg`}>
+            {formatPercent(performance.retornoPercentual)}
+          </span>
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {formatCurrency(performance.ganhoAbsoluto)} • {formatPercent(performance.retornoAnualizado)} a.a.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Component to fetch and display detailed basket analysis
+interface BasketDetailedAnalysisProps {
+  cestaId: string;
+  period: '1M' | '3M' | '6M' | '1Y' | 'YTD' | 'ALL';
+}
+
+function BasketDetailedAnalysis({ cestaId, period }: BasketDetailedAnalysisProps) {
+  const performanceQuery = api.cesta.getPerformance.useQuery({ cestaId, period });
+  const cestaQuery = api.cesta.getById.useQuery({ id: cestaId });
+
+  if (performanceQuery.isLoading || cestaQuery.isLoading) {
+    return (
+      <div className="flex justify-center items-center p-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (performanceQuery.error || cestaQuery.error) {
+    return (
+      <Card className="border-red-500">
+        <CardContent className="p-6">
+          <p className="text-red-600">Erro ao carregar análise detalhada</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!performanceQuery.data || !cestaQuery.data) return null;
+
+  return <BasketPerformanceDetail performance={performanceQuery.data} cestaName={cestaQuery.data.name} />;
 }

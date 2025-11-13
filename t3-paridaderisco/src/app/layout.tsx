@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import type { Metadata } from "next";
 import { Providers } from "~/components/providers";
 import { Header } from "~/components/layout/Header";
+import { Toaster } from "~/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "ParidadeRisco",
@@ -26,6 +27,7 @@ export default function RootLayout({
               {children}
             </div>
           </div>
+          <Toaster />
         </Providers>
       </body>
     </html>

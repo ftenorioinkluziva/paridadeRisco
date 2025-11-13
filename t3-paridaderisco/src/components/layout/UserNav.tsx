@@ -7,9 +7,9 @@ import { useRouter } from "next/navigation";
 
 export function UserNav() {
   const router = useRouter();
-  
-  // TODO: Replace with actual auth session
-  const user = { name: "User", email: "user@example.com" };
+
+  // Fetch real user data
+  const { data: user } = api.user.getUserProfile.useQuery();
 
   // Logout mutation
   const logoutMutation = api.auth.logout.useMutation({
@@ -42,7 +42,7 @@ export function UserNav() {
     <div className="flex items-center space-x-2">
       <div className="hidden md:flex items-center space-x-2 text-sm">
         <User className="h-4 w-4" />
-        <span>{user.name}</span>
+        <span>{user?.name || "Usuário"}</span>
       </div>
       <Button
         variant="ghost"
