@@ -61,7 +61,10 @@
       "Bash(taskkill:*)",
       "Bash(del \"C:\\projetos\\paridadeRisco\\t3-paridaderisco\\src\\app\\register\\page.tsx\")",
       "Bash(NEXT_LINT=false npm run build)",
-      "Bash(npx shadcn@latest add select:*)"
+      "Bash(npx shadcn@latest add select:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)"
     ],
     "deny": []
   }

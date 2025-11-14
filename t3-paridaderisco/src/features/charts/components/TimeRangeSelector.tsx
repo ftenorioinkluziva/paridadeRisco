@@ -5,6 +5,7 @@ import { Calendar, Clock } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
+import { DatePicker } from "~/components/ui/date-picker";
 import type { TimeRange } from "../types/charts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -167,32 +168,44 @@ export const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
               Período Personalizado
             </div>
             
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Data Início</label>
-                <input
-                  type="date"
-                  value={customStartDate ? format(customStartDate, "yyyy-MM-dd") : ""}
-                  onChange={(e) => {
-                    if (e.target.value && customEndDate) {
-                      onCustomRangeChange(new Date(e.target.value), customEndDate);
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">
+                  Data Início
+                </label>
+                <DatePicker
+                  date={customStartDate}
+                  onDateChange={(date) => {
+                    if (date && customEndDate) {
+                      onCustomRangeChange(date, customEndDate);
+                    } else if (date) {
+                      // Se não tem data fim ainda, define como hoje
+                      onCustomRangeChange(date, new Date());
                     }
                   }}
-                  className="w-full text-xs border rounded px-2 py-1"
+                  placeholder="Selecione a data inicial"
+                  className="h-9 text-sm"
                 />
               </div>
-              
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Data Fim</label>
-                <input
-                  type="date"
-                  value={customEndDate ? format(customEndDate, "yyyy-MM-dd") : ""}
-                  onChange={(e) => {
-                    if (e.target.value && customStartDate) {
-                      onCustomRangeChange(customStartDate, new Date(e.target.value));
+
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground">
+                  Data Fim
+                </label>
+                <DatePicker
+                  date={customEndDate}
+                  onDateChange={(date) => {
+                    if (date && customStartDate) {
+                      onCustomRangeChange(customStartDate, date);
+                    } else if (date) {
+                      // Se não tem data início ainda, define como 1 ano atrás
+                      const oneYearAgo = new Date(date);
+                      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                      onCustomRangeChange(oneYearAgo, date);
                     }
                   }}
-                  className="w-full text-xs border rounded px-2 py-1"
+                  placeholder="Selecione a data final"
+                  className="h-9 text-sm"
                 />
               </div>
             </div>

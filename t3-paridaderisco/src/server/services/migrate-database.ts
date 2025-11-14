@@ -166,7 +166,6 @@ async function importData(data: MigrationData): Promise<void> {
         id: dado.id,
         date: dado.date,
         price: dado.price,
-        percentageChange: dado.percentageChange,
         ativoId: dado.ativoId,
       })),
       skipDuplicates: true,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { subDays, format } from "date-fns";
+import { calculatePercentageChange } from "~/lib/utils/priceCalculations";
 
 // Tipos para os dados de charts
 const TimeRangeSchema = z.enum(["30d", "90d", "365d", "1y", "3y", "5y", "custom"]);
@@ -68,6 +69,7 @@ export const chartsRouter = createTRPCRouter({
               ticker: true,
               name: true,
               type: true,
+              calculationType: true,
             },
           },
         },
@@ -98,15 +100,34 @@ export const chartsRouter = createTRPCRouter({
 
       // Processar dados para o gráfico
       const basePrice = historicalData[0]?.price?.toNumber() || 0;
-      
-      const chartData = historicalData.map((point) => {
+      const isPercentualType = asset.calculationType === "PERCENTUAL";
+
+      // Para ativos PERCENTUAL (CDI, IPCA), calculamos o índice acumulado
+      let accumulatedIndex = 100;
+      const baseIndex = 100;
+
+      const chartData = historicalData.map((point, index) => {
         const price = point.price?.toNumber() || 0;
-        const percentageChange = point.percentageChange?.toNumber() || 0;
-        
+
+        // Calculate percentageChange dynamically based on previous point
+        const previousPrice = index > 0 ? historicalData[index - 1]?.price?.toNumber() || null : null;
+        const percentageChange = calculatePercentageChange(previousPrice, price) || 0;
+
         // Calcular valor normalizado se solicitado
-        const value = normalized && basePrice > 0
-          ? ((price - basePrice) / basePrice) * 100
-          : price;
+        let value: number;
+
+        if (normalized) {
+          if (isPercentualType) {
+            // Para índices percentuais: calcular índice acumulado
+            accumulatedIndex = accumulatedIndex * (1 + price / 100);
+            value = ((accumulatedIndex - baseIndex) / baseIndex) * 100;
+          } else {
+            // Para ativos de preço: usar cálculo direto
+            value = basePrice > 0 ? ((price - basePrice) / basePrice) * 100 : 0;
+          }
+        } else {
+          value = price;
+        }
 
         return {
           date: format(point.date, "yyyy-MM-dd"),
@@ -194,6 +215,7 @@ export const chartsRouter = createTRPCRouter({
                   ticker: true,
                   name: true,
                   type: true,
+                  calculationType: true,
                 },
               },
             },
@@ -205,7 +227,7 @@ export const chartsRouter = createTRPCRouter({
           }
 
           const basePrice = historicalData[0]?.price?.toNumber() || 0;
-          
+
           const asset = historicalData[0]?.ativo;
           if (!asset) {
             console.warn(`Asset data not found for assetId: ${assetId}`);
@@ -214,18 +236,30 @@ export const chartsRouter = createTRPCRouter({
 
           console.log(`Found ${historicalData.length} data points for ${asset.ticker}`);
 
+          const isPercentualType = asset.calculationType === "PERCENTUAL";
+
           return {
             assetId,
             asset,
             data: historicalData.map((point) => {
               const price = point.price?.toNumber() || 0;
-              const normalizedReturn = basePrice > 0
-                ? ((price - basePrice) / basePrice) * 100
-                : 0;
+
+              let value: number;
+
+              if (isPercentualType) {
+                // Para índices percentuais (CDI, IPCA): plotar o valor raw diretamente
+                // Os valores já são taxas percentuais mensais (ex: 0.89, 1.35, -0.68...)
+                value = price;
+              } else {
+                // Para ativos de preço (ações, ETFs): calcular retorno normalizado
+                value = basePrice > 0
+                  ? ((price - basePrice) / basePrice) * 100
+                  : 0;
+              }
 
               return {
                 date: format(point.date, "yyyy-MM-dd"),
-                value: normalizedReturn,
+                value,
                 rawPrice: price,
               };
             }),

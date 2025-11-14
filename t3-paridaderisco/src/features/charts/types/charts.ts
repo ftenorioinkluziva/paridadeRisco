@@ -14,6 +14,7 @@ export interface Asset {
   ticker: string;
   name: string;
   type: string;
+  calculationType?: "PRECO" | "PERCENTUAL";
 }
 
 export interface TimeSeriesData {

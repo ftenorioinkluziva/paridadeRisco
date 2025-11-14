@@ -44,7 +44,7 @@ async function checkData() {
     });
 
     sampleData.forEach(record => {
-      console.log(`${record.ativo.ticker}: ${record.date.toISOString().split('T')[0]} - R$ ${record.price?.toFixed(2)} (${record.percentageChange?.toFixed(2)}%)`);
+      console.log(`${record.ativo.ticker}: ${record.date.toISOString().split('T')[0]} - R$ ${record.price?.toFixed(2)}`);
     });
 
   } catch (error) {

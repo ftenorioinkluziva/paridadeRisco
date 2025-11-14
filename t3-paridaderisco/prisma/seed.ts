@@ -162,7 +162,6 @@ async function seedDadosHistoricos() {
         return {
           date: new Date(legacy.data),
           price: legacy.fechamento,
-          percentageChange: legacy.retorno_diario,
           ativoId: ativo.id,
         };
       })

@@ -121,21 +121,21 @@ async function fixCDIData() {
     for (let i = 1; i < cleanData.length; i++) {
       const current = cleanData[i]!;
       const currentPrice = current.price?.toNumber() || 0;
-      const percentageChange = current.percentageChange?.toNumber() || 0;
 
       // Se o preço atual é menor que o anterior, houve um reset
       if (currentPrice < lastValidPrice) {
         resets++;
 
-        // Calcular o preço correto aplicando o percentageChange ao último valor válido
-        const correctPrice = lastValidPrice * (1 + percentageChange / 100);
+        // Note: Without percentageChange, we cannot auto-fix resets
+        // This script is now for detection only
+        console.warn(`  ⚠️ Reset detected at ${current.date.toISOString()}: ${currentPrice} < ${lastValidPrice}`);
 
         updates.push({
           id: current.id,
-          newPrice: correctPrice,
+          newPrice: currentPrice, // Keep as-is since we can't calculate without percentageChange
         });
 
-        lastValidPrice = correctPrice;
+        lastValidPrice = currentPrice;
       } else {
         lastValidPrice = currentPrice;
       }

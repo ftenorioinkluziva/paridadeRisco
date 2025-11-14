@@ -21,8 +21,7 @@ async function testIPCAExpectativaAPI() {
       const lastRecords = ipcaExpData.historicalData.slice(-5);
       lastRecords.forEach(record => {
         const dateStr = record.date.toISOString().split('T')[0];
-        const changeStr = record.percentageChange ? ` (${record.percentageChange > 0 ? '+' : ''}${record.percentageChange.toFixed(2)}%)` : '';
-        console.log(`   ${dateStr}: ${record.price?.toFixed(4)}%${changeStr}`);
+        console.log(`   ${dateStr}: ${record.price?.toFixed(4)}%`);
       });
       
       // Compare with historical trends

@@ -49,10 +49,15 @@ const CHART_COLORS = [
   "#b45309", // amber-700
 ];
 
-const CustomTooltip: React.FC<CustomTooltipProps> = ({ 
-  active, 
-  payload, 
-  label 
+interface ExtendedCustomTooltipProps extends CustomTooltipProps {
+  assetTypesMap?: Map<string, "PERCENTUAL" | "PRECO">;
+}
+
+const CustomTooltip: React.FC<ExtendedCustomTooltipProps> = ({
+  active,
+  payload,
+  label,
+  assetTypesMap
 }) => {
   if (active && payload && payload.length > 0) {
     // Safely parse the date with validation
@@ -71,30 +76,36 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md max-w-sm">
         <p className="font-medium text-foreground mb-2">{formattedDate}</p>
-        
+
         <div className="space-y-1">
           {[...payload]
-            .sort((a, b) => b.value - a.value) // Ordenar por valor decrescente
-            .map((entry, index) => (
-              <div key={index} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: entry.color }}
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    {entry.dataKey}:
+            .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)) // Ordenar por valor absoluto decrescente
+            .map((entry, index) => {
+              // Determinar se é um índice percentual ou retorno de preço
+              const ticker = entry.dataKey as string;
+              const isPercentual = assetTypesMap?.get(ticker) === "PERCENTUAL";
+
+              return (
+                <div key={index} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {entry.dataKey}:
+                    </span>
+                  </div>
+                  <span
+                    className={`text-sm font-medium ${
+                      entry.value >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {formatPercentageChange(entry.value)}
                   </span>
                 </div>
-                <span 
-                  className={`text-sm font-medium ${
-                    entry.value >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {formatPercentageChange(entry.value)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
         </div>
       </div>
     );
@@ -144,6 +155,34 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({
 
   // Estado para controlar visibilidade das linhas
   const [hiddenAssets, setHiddenAssets] = useState<Set<string>>(new Set());
+
+  // Criar mapa de tipos de ativos
+  const assetTypesMap = useMemo(() => {
+    const map = new Map<string, "PERCENTUAL" | "PRECO">();
+    data.data.forEach((assetData) => {
+      map.set(
+        assetData.asset.ticker,
+        assetData.asset.calculationType === "PERCENTUAL" ? "PERCENTUAL" : "PRECO"
+      );
+    });
+    return map;
+  }, [data.data]);
+
+  // Determinar se temos apenas índices, apenas preços, ou misturado
+  const assetTypes = useMemo(() => {
+    const percentualCount = data.data.filter(
+      (assetData) => assetData.asset.calculationType === "PERCENTUAL"
+    ).length;
+    const precoCount = data.data.length - percentualCount;
+
+    return {
+      hasPercentual: percentualCount > 0,
+      hasPreco: precoCount > 0,
+      isMixed: percentualCount > 0 && precoCount > 0,
+      allPercentual: percentualCount === data.data.length,
+      allPreco: precoCount === data.data.length,
+    };
+  }, [data.data]);
 
   // Processar dados para o gráfico
   const chartData = useMemo(() => {
@@ -240,10 +279,10 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({
         scale="linear"
         allowDataOverflow={false}
       />
-      
+
       {showTooltip && (
         <Tooltip
-          content={(props) => <CustomTooltip {...props} />}
+          content={(props) => <CustomTooltip {...props} assetTypesMap={assetTypesMap} />}
           cursor={{ stroke: "#64748b", strokeWidth: 1, strokeDasharray: "4 4" }}
         />
       )}
@@ -317,15 +356,47 @@ export const ComparisonChart: React.FC<ComparisonChartProps> = ({
     </LineChart>
   );
 
+  // Gerar texto explicativo baseado nos tipos de ativos
+  const chartTypeLabel = useMemo(() => {
+    if (assetTypes.allPercentual) {
+      return "Taxa Percentual (% ao mês)";
+    } else if (assetTypes.allPreco) {
+      return "Retorno Normalizado (%)";
+    } else if (assetTypes.isMixed) {
+      return "Comparação: Taxa Mensal vs Retorno";
+    }
+    return "";
+  }, [assetTypes]);
+
   if (responsive) {
     return (
-      <div className={`w-full overflow-hidden ${className}`} style={{ height }}>
-        <ResponsiveContainer width="100%" height="100%" minWidth={300}>
-          {ChartComponent}
-        </ResponsiveContainer>
+      <div className={`w-full ${className}`}>
+        {chartTypeLabel && (
+          <div className="text-center mb-2">
+            <p className="text-xs text-muted-foreground font-medium">
+              {chartTypeLabel}
+            </p>
+          </div>
+        )}
+        <div className="w-full overflow-hidden" style={{ height }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={300}>
+            {ChartComponent}
+          </ResponsiveContainer>
+        </div>
       </div>
     );
   }
 
-  return <div className={className}>{ChartComponent}</div>;
+  return (
+    <div className={className}>
+      {chartTypeLabel && (
+        <div className="text-center mb-2">
+          <p className="text-xs text-muted-foreground font-medium">
+            {chartTypeLabel}
+          </p>
+        </div>
+      )}
+      {ChartComponent}
+    </div>
+  );
 };

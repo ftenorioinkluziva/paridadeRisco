@@ -28,14 +28,12 @@ async function testCryptoFetcher() {
         cryptoData.historicalData.slice(0, 3).forEach((record, index) => {
           console.log(`\n  ${index + 1}. Date: ${record.date.toISOString().split('T')[0]}`);
           console.log(`     Price: R$ ${record.price?.toFixed(2)}`);
-          console.log(`     Change: ${record.percentageChange?.toFixed(2)}%`);
         });
 
         console.log('\n📅 Last record:');
         const lastRecord = cryptoData.historicalData[cryptoData.historicalData.length - 1];
         console.log(`   Date: ${lastRecord.date.toISOString().split('T')[0]}`);
         console.log(`   Price: R$ ${lastRecord.price?.toFixed(2)}`);
-        console.log(`   Change: ${lastRecord.percentageChange?.toFixed(2)}%`);
       }
 
       console.log('\n✅ Test completed successfully!');

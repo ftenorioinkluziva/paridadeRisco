@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { Decimal } from "@prisma/client/runtime/library";
+import { calculatePercentageChange } from "~/lib/utils/priceCalculations";
 
 // Schema de validação para entrada
 const retirementInputSchema = z.object({
@@ -273,13 +274,16 @@ export const retirementRouter = createTRPCRouter({
 
     // Calcular inflação anual acumulada (soma dos últimos 12 meses)
     let inflacaoAnualAcumulada = 0;
-    if (ipca && ipca.dadosHistoricos.length > 0) {
-      inflacaoAnualAcumulada = ipca.dadosHistoricos
-        .slice(0, 12)
-        .reduce((acc, dado) => {
-          const percentual = dado.percentageChange?.toNumber() || 0;
-          return acc + percentual;
-        }, 0);
+    if (ipca && ipca.dadosHistoricos.length > 1) {
+      const last12Months = ipca.dadosHistoricos.slice(0, Math.min(12, ipca.dadosHistoricos.length));
+      for (let i = 0; i < last12Months.length; i++) {
+        if (i < ipca.dadosHistoricos.length - 1) {
+          const currentPrice = last12Months[i]?.price?.toNumber() || null;
+          const previousPrice = ipca.dadosHistoricos[i + 1]?.price?.toNumber() || null;
+          const percentual = calculatePercentageChange(previousPrice, currentPrice) || 0;
+          inflacaoAnualAcumulada += percentual;
+        }
+      }
     }
 
     // Expectativa de inflação (IPCA_EXP)

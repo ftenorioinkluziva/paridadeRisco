@@ -69,7 +69,6 @@ interface AssetData {
   historicalData: Array<{
     date: Date;
     price: number | null;
-    percentageChange: number | null;
   }>;
 }
 
@@ -80,6 +79,7 @@ export class FinancialDataFetcher {
   // BCB series codes
   private readonly SELIC_SERIES_CODE = 432;
   private readonly CDI_SERIES_CODE = 12;
+  private readonly CDI_MENSAL_SERIES_CODE = 4391;
   private readonly IPCA_SERIES_CODE = 433;
   
   // IPEADATA URLs
@@ -94,6 +94,7 @@ export class FinancialDataFetcher {
     { ticker: 'FIXA11.SA', name: 'FIXA11 (Pré)', type: 'ETF', calculationType: AssetCalculationType.PRECO },
     { ticker: 'USDBRL=X', name: 'USD/BRL (Dólar)', type: 'Currency', calculationType: AssetCalculationType.PRECO },
     { ticker: 'CDI', name: 'CDI', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
+    { ticker: 'CDI_MENSAL', name: 'CDI Mensal', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
     { ticker: 'IPCA', name: 'IPCA (Inflação)', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
     { ticker: 'IPCA_EXP', name: 'IPCA Expectativa 12M', type: 'Index', calculationType: AssetCalculationType.PERCENTUAL },
     { ticker: 'BTC-USD', name: 'Bitcoin', type: 'Crypto', calculationType: AssetCalculationType.PRECO },
@@ -157,49 +158,19 @@ export class FinancialDataFetcher {
       }
 
       const historicalData = [];
-      let previousPrice: number | null = null;
-
-      // If startDate is provided (incremental update), get the last price from database
-      if (startDate) {
-        try {
-          const lastRecord = await prisma.dadoHistorico.findFirst({
-            where: {
-              ativo: { ticker },
-              date: { lt: startDate },
-            },
-            orderBy: { date: 'desc' },
-            select: { price: true },
-          });
-
-          if (lastRecord && lastRecord.price !== null) {
-            previousPrice = Number(lastRecord.price);
-            console.log(`Using last database price for ${ticker} incremental update: ${previousPrice.toFixed(4)}`);
-          }
-        } catch (error) {
-          console.warn(`Could not fetch last price from database for ${ticker}:`, error);
-        }
-      }
 
       for (let i = 0; i < timestamps.length; i++) {
         const timestamp = timestamps[i];
         const close = quotes.close[i];
-        
+
         if (timestamp && close !== null && close !== undefined) {
           const date = new Date(timestamp * 1000);
           const price = Number(close);
-          
-          let percentageChange: number | null = null;
-          if (previousPrice !== null && previousPrice !== 0) {
-            percentageChange = ((price - previousPrice) / previousPrice) * 100;
-          }
 
           historicalData.push({
             date,
             price,
-            percentageChange,
           });
-
-          previousPrice = price;
         }
       }
 
@@ -254,28 +225,6 @@ export class FinancialDataFetcher {
 
       // 4. Convert prices from USD to BRL
       const historicalDataBRL = [];
-      let previousPrice: number | null = null;
-
-      // If startDate is provided (incremental update), get the last price from database
-      if (startDate) {
-        try {
-          const lastRecord = await prisma.dadoHistorico.findFirst({
-            where: {
-              ativo: { ticker },
-              date: { lt: startDate },
-            },
-            orderBy: { date: 'desc' },
-            select: { price: true },
-          });
-
-          if (lastRecord && lastRecord.price !== null) {
-            previousPrice = Number(lastRecord.price);
-            console.log(`Using last database price for ${ticker} incremental update: ${previousPrice.toFixed(4)}`);
-          }
-        } catch (error) {
-          console.warn(`Could not fetch last price from database for ${ticker}:`, error);
-        }
-      }
 
       for (const dataPoint of cryptoDataUSD.historicalData) {
         const dateKey = dataPoint.date.toISOString().split('T')[0];
@@ -284,18 +233,10 @@ export class FinancialDataFetcher {
         if (dataPoint.price !== null && exchangeRate) {
           const priceInBRL = dataPoint.price * exchangeRate;
 
-          let percentageChange: number | null = null;
-          if (previousPrice !== null && previousPrice !== 0) {
-            percentageChange = ((priceInBRL - previousPrice) / previousPrice) * 100;
-          }
-
           historicalDataBRL.push({
             date: dataPoint.date,
             price: priceInBRL,
-            percentageChange,
           });
-
-          previousPrice = priceInBRL;
         }
       }
 
@@ -325,9 +266,9 @@ export class FinancialDataFetcher {
 
   async fetchIPCAData(startDate?: Date, endDate?: Date): Promise<AssetData | null> {
     try {
-      const url = `http://api.bcb.gov.br/dados/serie/bcdata.sgs.${this.IPCA_SERIES_CODE}/dados?formato=json`;
-      
-      console.log(`Fetching IPCA data from BCB API...`);
+      const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${this.IPCA_SERIES_CODE}/dados?formato=json`;
+
+      console.log(`Fetching IPCA data from BCB API (series ${this.IPCA_SERIES_CODE})...`);
 
       const response = await axios.get<BCBIPCAResponse[]>(url, {
         timeout: 30000,
@@ -346,30 +287,21 @@ export class FinancialDataFetcher {
       const end = endDate || now;
 
       const historicalData = [];
-      let previousPrice: number | null = null;
 
       // Convert BCB data format to our format
       for (const record of response.data) {
         const [day, month, year] = record.data.split('/');
         const recordDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-        
+
         // Filter by date range
         if (recordDate >= start && recordDate <= end) {
           const inflationRate = parseFloat(record.valor);
-          
-          if (!isNaN(inflationRate)) {
-            let percentageChange: number | null = null;
-            if (previousPrice !== null && previousPrice !== 0) {
-              percentageChange = inflationRate; // IPCA is already a percentage change
-            }
 
+          if (!isNaN(inflationRate)) {
             historicalData.push({
               date: recordDate,
               price: inflationRate, // Store inflation rate as price
-              percentageChange: inflationRate, // For IPCA, this is the monthly inflation
             });
-
-            previousPrice = inflationRate;
           }
         }
       }
@@ -418,50 +350,20 @@ export class FinancialDataFetcher {
       const end = endDate || now;
 
       const historicalData = [];
-      let previousPrice: number | null = null;
-
-      // If startDate is provided (incremental update), get the last price from database
-      if (startDate) {
-        try {
-          const lastRecord = await prisma.dadoHistorico.findFirst({
-            where: {
-              ativo: { ticker: 'IPCA_EXP' },
-              date: { lt: start },
-            },
-            orderBy: { date: 'desc' },
-            select: { price: true },
-          });
-
-          if (lastRecord && lastRecord.price !== null) {
-            previousPrice = Number(lastRecord.price);
-            console.log(`Using last database price for IPCA Expectativa incremental update: ${previousPrice.toFixed(4)}`);
-          }
-        } catch (error) {
-          console.warn('Could not fetch last price from database for IPCA Expectativa:', error);
-        }
-      }
 
       // Convert IPEADATA data format to our format
       for (const record of response.data.value) {
         const recordDate = new Date(record.VALDATA);
-        
+
         // Filter by date range
         if (recordDate >= start && recordDate <= end) {
           const expectationValue = record.VALVALOR;
-          
-          if (!isNaN(expectationValue) && expectationValue !== null) {
-            let percentageChange: number | null = null;
-            if (previousPrice !== null && previousPrice !== 0) {
-              percentageChange = ((expectationValue - previousPrice) / previousPrice) * 100;
-            }
 
+          if (!isNaN(expectationValue) && expectationValue !== null) {
             historicalData.push({
               date: recordDate,
               price: expectationValue, // Store expectation as price
-              percentageChange,
             });
-
-            previousPrice = expectationValue;
           }
         }
       }
@@ -500,7 +402,7 @@ export class FinancialDataFetcher {
       console.log(`Fetching CDI data from BCB API (series ${seriesCode})...`);
       console.log(`Date range: ${this.formatDateForBCB(effectiveStart)} to ${this.formatDateForBCB(end)}`);
 
-      const url = `http://api.bcb.gov.br/dados/serie/bcdata.sgs.${seriesCode}/dados`;
+      const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${seriesCode}/dados`;
       const params = {
         formato: 'json',
         dataInicial: this.formatDateForBCB(effectiveStart),
@@ -523,32 +425,8 @@ export class FinancialDataFetcher {
       console.log(`Received ${response.data.length} CDI records from BCB`);
 
       const historicalData = [];
-      let cumulativeIndex = 100; // Start with base 100
-      let previousPrice: number | null = null;
 
-      // If startDate is provided (incremental update), get the last price from database
-      if (startDate) {
-        try {
-          const lastRecord = await prisma.dadoHistorico.findFirst({
-            where: {
-              ativo: { ticker: 'CDI' },
-              date: { lt: effectiveStart },
-            },
-            orderBy: { date: 'desc' },
-            select: { price: true },
-          });
-
-          if (lastRecord && lastRecord.price !== null) {
-            previousPrice = Number(lastRecord.price);
-            cumulativeIndex = Number(lastRecord.price);
-            console.log(`Using last database price for incremental update: ${previousPrice.toFixed(4)}`);
-          }
-        } catch (error) {
-          console.warn('Could not fetch last price from database:', error);
-        }
-      }
-
-      // Process BCB data
+      // Process BCB data - Store daily rate directly (like IPCA)
       for (const record of response.data) {
         const [day, month, year] = record.data.split('/');
         const recordDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -556,23 +434,11 @@ export class FinancialDataFetcher {
         const dailyRate = parseFloat(record.valor); // Daily percentage (e.g., 0.055131 = 0.055131%)
 
         if (!isNaN(dailyRate)) {
-          // Calculate cumulative index: multiply by (1 + daily rate)
-          // The valor from BCB is already in percentage divided by 100 (0.055131 = 0.055131%)
-          cumulativeIndex = cumulativeIndex * (1 + dailyRate / 100);
-          const price = cumulativeIndex;
-
-          let percentageChange: number | null = null;
-          if (previousPrice !== null && previousPrice !== 0) {
-            percentageChange = ((price - previousPrice) / previousPrice) * 100;
-          }
-
+          // Store the daily rate directly, not accumulated
           historicalData.push({
             date: recordDate,
-            price,
-            percentageChange,
+            price: dailyRate, // Store daily CDI rate as price
           });
-
-          previousPrice = price;
         }
       }
 
@@ -582,10 +448,9 @@ export class FinancialDataFetcher {
       console.log(`Successfully processed ${historicalData.length} CDI records`);
 
       if (historicalData.length > 0) {
-        const firstRecord = historicalData[0];
-        const lastRecord = historicalData[historicalData.length - 1];
-        const totalReturn = ((lastRecord.price / firstRecord.price - 1) * 100).toFixed(4);
-        console.log(`CDI accumulated return: ${totalReturn}% (from ${firstRecord.price.toFixed(2)} to ${lastRecord.price.toFixed(2)})`);
+        const firstRate = historicalData[0].price;
+        const lastRate = historicalData[historicalData.length - 1].price;
+        console.log(`CDI rate range: ${firstRate.toFixed(4)}% to ${lastRate.toFixed(4)}%`);
       }
 
       return {
@@ -599,6 +464,86 @@ export class FinancialDataFetcher {
 
     } catch (error) {
       console.error(`Error fetching CDI data from BCB:`, error);
+      return null;
+    }
+  }
+
+  async fetchCDIMensalData(startDate?: Date, endDate?: Date): Promise<AssetData | null> {
+    try {
+      const now = new Date();
+      const start = startDate || new Date(now.getFullYear() - 5, now.getMonth(), now.getDate());
+      const end = endDate || now;
+
+      // BCB API has a 10-year maximum window
+      const tenYearsAgo = new Date(end);
+      tenYearsAgo.setFullYear(end.getFullYear() - 10);
+      const effectiveStart = start < tenYearsAgo ? tenYearsAgo : start;
+
+      console.log(`Fetching CDI Mensal data from BCB API (series ${this.CDI_MENSAL_SERIES_CODE})...`);
+      console.log(`Date range: ${this.formatDateForBCB(effectiveStart)} to ${this.formatDateForBCB(end)}`);
+
+      const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${this.CDI_MENSAL_SERIES_CODE}/dados`;
+      const params = {
+        formato: 'json',
+        dataInicial: this.formatDateForBCB(effectiveStart),
+        dataFinal: this.formatDateForBCB(end),
+      };
+
+      const response = await axios.get<BCBResponse[]>(url, {
+        params,
+        timeout: 30000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
+
+      if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+        console.error('No CDI Mensal data returned from BCB API');
+        return null;
+      }
+
+      console.log(`Received ${response.data.length} CDI Mensal records from BCB`);
+
+      const historicalData = [];
+
+      // Process BCB data - Store monthly rate directly (like IPCA)
+      for (const record of response.data) {
+        const [day, month, year] = record.data.split('/');
+        const recordDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+
+        const monthlyRate = parseFloat(record.valor); // Monthly percentage (e.g., 1.22 = 1.22%)
+
+        if (!isNaN(monthlyRate)) {
+          // Store the monthly rate directly, not accumulated
+          historicalData.push({
+            date: recordDate,
+            price: monthlyRate, // Store monthly CDI rate as price
+          });
+        }
+      }
+
+      // Sort by date ascending
+      historicalData.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+      console.log(`Successfully processed ${historicalData.length} CDI Mensal records`);
+
+      if (historicalData.length > 0) {
+        const firstRate = historicalData[0].price;
+        const lastRate = historicalData[historicalData.length - 1].price;
+        console.log(`CDI Mensal rate range: ${firstRate.toFixed(4)}% to ${lastRate.toFixed(4)}%`);
+      }
+
+      return {
+        ticker: 'CDI_MENSAL',
+        name: 'CDI Mensal',
+        type: 'Index',
+        calculationType: AssetCalculationType.PERCENTUAL,
+        currentPrice: historicalData.length > 0 ? historicalData[historicalData.length - 1].price : undefined,
+        historicalData,
+      };
+
+    } catch (error) {
+      console.error(`Error fetching CDI Mensal data from BCB:`, error);
       return null;
     }
   }
@@ -663,13 +608,11 @@ export class FinancialDataFetcher {
             },
             update: {
               price: dataPoint.price ? parseFloat(dataPoint.price.toFixed(4)) : null,
-              percentageChange: dataPoint.percentageChange ? parseFloat(dataPoint.percentageChange.toFixed(4)) : null,
             },
             create: {
               ativoId: asset.id,
               date: dataPoint.date,
               price: dataPoint.price ? parseFloat(dataPoint.price.toFixed(4)) : null,
-              percentageChange: dataPoint.percentageChange ? parseFloat(dataPoint.percentageChange.toFixed(4)) : null,
             },
           });
         }
@@ -711,6 +654,8 @@ export class FinancialDataFetcher {
           assetData = await this.fetchCryptoData(assetConfig.ticker, startDate);
         } else if (assetConfig.ticker === 'CDI') {
           assetData = await this.fetchBCBData(this.CDI_SERIES_CODE, startDate);
+        } else if (assetConfig.ticker === 'CDI_MENSAL') {
+          assetData = await this.fetchCDIMensalData(startDate);
         } else if (assetConfig.ticker === 'IPCA') {
           assetData = await this.fetchIPCAData(startDate);
         } else if (assetConfig.ticker === 'IPCA_EXP') {
@@ -746,6 +691,8 @@ export class FinancialDataFetcher {
         assetData = await this.fetchCryptoData(ticker, startDate, endDate);
       } else if (ticker === 'CDI') {
         assetData = await this.fetchBCBData(this.CDI_SERIES_CODE, startDate, endDate);
+      } else if (ticker === 'CDI_MENSAL') {
+        assetData = await this.fetchCDIMensalData(startDate, endDate);
       } else if (ticker === 'IPCA') {
         assetData = await this.fetchIPCAData(startDate, endDate);
       } else if (ticker === 'IPCA_EXP') {

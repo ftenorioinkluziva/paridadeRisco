@@ -545,16 +545,46 @@ export const cestaRouter = createTRPCRouter({
         const { ativo } = allocation;
         const historicalData = ativo.dadosHistoricos;
 
-        // Find prices closest to start and end dates
-        const startPrice = findClosestPrice(historicalData, periodDates.startDate);
-        const endPrice = findClosestPrice(historicalData, periodDates.endDate);
+        // Filtrar dados dentro do período
+        const periodData = historicalData.filter(
+          d => d.date >= periodDates.startDate && d.date <= periodDates.endDate
+        );
 
-        if (startPrice === null || endPrice === null) {
+        if (periodData.length === 0) {
           hasInsufficientData = true;
           continue;
         }
 
-        const returnPercentage = calculateAssetReturn(startPrice, endPrice);
+        let returnPercentage: number;
+        let startPrice: number;
+        let endPrice: number;
+
+        // Verificar se é ativo PERCENTUAL (CDI, IPCA) ou PRECO
+        if (ativo.calculationType === "PERCENTUAL") {
+          // Para ativos PERCENTUAIS: calcular índice acumulado a partir das taxas
+          let indiceAcumulado = 100;
+          for (const dado of periodData) {
+            const taxa = dado.price?.toNumber() || 0;
+            indiceAcumulado = indiceAcumulado * (1 + taxa / 100);
+          }
+          returnPercentage = ((indiceAcumulado - 100) / 100) * 100;
+
+          // Para display, usar primeira e última taxa
+          startPrice = periodData[0]?.price?.toNumber() || 0;
+          endPrice = periodData[periodData.length - 1]?.price?.toNumber() || 0;
+        } else {
+          // Para ativos de PRECO: usar cálculo tradicional
+          startPrice = findClosestPrice(historicalData, periodDates.startDate) || 0;
+          endPrice = findClosestPrice(historicalData, periodDates.endDate) || 0;
+
+          if (startPrice === 0 || endPrice === 0) {
+            hasInsufficientData = true;
+            continue;
+          }
+
+          returnPercentage = calculateAssetReturn(startPrice, endPrice);
+        }
+
         const allocationPercent = Number(allocation.targetPercentage);
         const weightedReturn = (returnPercentage * allocationPercent) / 100;
 
@@ -651,9 +681,9 @@ export const cestaRouter = createTRPCRouter({
 
       const benchmarks: BenchmarkComparison[] = [];
 
-      // Fetch CDI data
+      // Fetch CDI data (usar CDI_MENSAL para taxas mensais corretas)
       const cdiAtivo = await ctx.prisma.ativo.findFirst({
-        where: { ticker: 'CDI' },
+        where: { ticker: 'CDI_MENSAL' },
         include: {
           dadosHistoricos: {
             where: {
@@ -669,12 +699,19 @@ export const cestaRouter = createTRPCRouter({
 
       let cdiReturn = 0;
       if (cdiAtivo && cdiAtivo.dadosHistoricos.length > 0) {
-        // CDI uses percentageChange (accumulated daily rates)
-        // Sum all daily rates to get period return
-        cdiReturn = cdiAtivo.dadosHistoricos.reduce(
-          (sum, data) => sum + (data.percentageChange?.toNumber() || 0),
-          0
-        );
+        // CDI armazena taxas percentuais mensais, não preços
+        // Precisamos calcular o índice acumulado a partir das taxas
+        let indiceAcumulado = 100; // Começar com base 100
+
+        for (const dado of cdiAtivo.dadosHistoricos) {
+          const taxaMensal = dado.price?.toNumber() || 0;
+          // Acumular: índice = índice * (1 + taxa/100)
+          indiceAcumulado = indiceAcumulado * (1 + taxaMensal / 100);
+        }
+
+        // Retorno = (índice final - índice inicial) / índice inicial * 100
+        cdiReturn = ((indiceAcumulado - 100) / 100) * 100;
+
         benchmarks.push({
           nome: 'CDI',
           retorno: cdiReturn,
@@ -684,7 +721,7 @@ export const cestaRouter = createTRPCRouter({
 
       // Fetch IPCA data
       const ipcaAtivo = await ctx.prisma.ativo.findFirst({
-        where: { ticker: 'IPCA_EXP' },
+        where: { ticker: 'IPCA' }, // Usar IPCA ao invés de IPCA_EXP
         include: {
           dadosHistoricos: {
             where: {
@@ -693,16 +730,24 @@ export const cestaRouter = createTRPCRouter({
                 lte: periodDates.endDate,
               },
             },
-            orderBy: { date: 'desc' },
-            take: 1,
+            orderBy: { date: 'asc' },
           },
         },
       });
 
+      let ipcaReturn = 0;
       if (ipcaAtivo && ipcaAtivo.dadosHistoricos.length > 0) {
-        // IPCA_EXP has current expectation in price field
-        const ipcaExpectation = ipcaAtivo.dadosHistoricos[0]?.price?.toNumber() || 0;
-        const ipcaReturn = (ipcaExpectation * days) / 365; // Prorated for period
+        // IPCA armazena taxas percentuais mensais, assim como o CDI
+        // Calcular índice acumulado a partir das taxas
+        let indiceAcumulado = 100;
+
+        for (const dado of ipcaAtivo.dadosHistoricos) {
+          const taxaMensal = dado.price?.toNumber() || 0;
+          indiceAcumulado = indiceAcumulado * (1 + taxaMensal / 100);
+        }
+
+        ipcaReturn = ((indiceAcumulado - 100) / 100) * 100;
+
         benchmarks.push({
           nome: 'IPCA',
           retorno: ipcaReturn,
@@ -725,18 +770,32 @@ export const cestaRouter = createTRPCRouter({
         // Calculate CDI evolution if available
         if (cdiAtivo && evolutionRaw.length > 0) {
           const cdiDataUpToDate = cdiAtivo.dadosHistoricos.filter(d => d.date <= point.date);
-          const cdiReturnUpToDate = cdiDataUpToDate.reduce(
-            (sum, data) => sum + (data.percentageChange?.toNumber() || 0),
-            0
-          );
+          let cdiReturnUpToDate = 0;
+          if (cdiDataUpToDate.length > 0) {
+            // CDI armazena taxas percentuais - calcular índice acumulado
+            let indiceAcumuladoCDI = 100;
+            for (const dado of cdiDataUpToDate) {
+              const taxaMensal = dado.price?.toNumber() || 0;
+              indiceAcumuladoCDI = indiceAcumuladoCDI * (1 + taxaMensal / 100);
+            }
+            cdiReturnUpToDate = ((indiceAcumuladoCDI - 100) / 100) * 100;
+          }
           valorCDI = valorInicial * (1 + cdiReturnUpToDate / 100);
         }
 
-        // IPCA is an annual rate, approximate linear growth
-        if (ipcaAtivo && ipcaAtivo.dadosHistoricos.length > 0) {
-          const ipcaRate = ipcaAtivo.dadosHistoricos[0]?.price?.toNumber() || 0;
-          const daysElapsed = getDaysBetween(periodDates.startDate, point.date);
-          const ipcaReturnUpToDate = (ipcaRate * daysElapsed) / 365;
+        // Calculate IPCA evolution if available
+        if (ipcaAtivo && evolutionRaw.length > 0) {
+          const ipcaDataUpToDate = ipcaAtivo.dadosHistoricos.filter(d => d.date <= point.date);
+          let ipcaReturnUpToDate = 0;
+          if (ipcaDataUpToDate.length > 0) {
+            // IPCA armazena taxas percentuais - calcular índice acumulado
+            let indiceAcumuladoIPCA = 100;
+            for (const dado of ipcaDataUpToDate) {
+              const taxaMensal = dado.price?.toNumber() || 0;
+              indiceAcumuladoIPCA = indiceAcumuladoIPCA * (1 + taxaMensal / 100);
+            }
+            ipcaReturnUpToDate = ((indiceAcumuladoIPCA - 100) / 100) * 100;
+          }
           valorIPCA = valorInicial * (1 + ipcaReturnUpToDate / 100);
         }
 

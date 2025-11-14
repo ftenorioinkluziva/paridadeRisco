@@ -77,12 +77,11 @@ model AtivosEmCestas {
 }
 
 model DadoHistorico {
-  id               String    @id @default(cuid())
-  date             DateTime
-  price            Decimal?  @db.Decimal(10, 2)
-  percentageChange Decimal?  @db.Decimal(10, 4)
-  ativoId          String
-  ativo            Ativo     @relation(fields: [ativoId], references: [id])
+  id      String    @id @default(cuid())
+  date    DateTime
+  price   Decimal?  @db.Decimal(10, 4)
+  ativoId String
+  ativo   Ativo     @relation(fields: [ativoId], references: [id])
 
   @@unique([ativoId, date])
 }

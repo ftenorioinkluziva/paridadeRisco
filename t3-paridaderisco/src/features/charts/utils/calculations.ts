@@ -4,18 +4,60 @@ import type { ChartDataPoint, TimeRange } from "../types/charts";
 
 /**
  * Calcula retorno percentual normalizado baseado no primeiro valor
+ * Para ativos com calculationType PERCENTUAL (CDI, IPCA), calcula índice acumulado
+ * Para ativos com calculationType PRECO (ações, ETFs), usa cálculo direto
+ *
+ * @param data Array de pontos de dados
+ * @param isPercentualType Se true, trata como taxa percentual (CDI, IPCA). Se false, trata como preço absoluto
+ * @returns Array com retorno normalizado calculado
  */
-export function calculateNormalizedReturns(data: ChartDataPoint[]): ChartDataPoint[] {
+export function calculateNormalizedReturns(
+  data: ChartDataPoint[],
+  isPercentualType: boolean = false
+): ChartDataPoint[] {
   if (data.length === 0) return [];
-  
-  const baseValue = data[0]?.rawPrice || data[0]?.value || 0;
-  
-  if (baseValue === 0) return data;
 
-  return data.map(point => ({
-    ...point,
-    value: ((point.rawPrice || point.value) - baseValue) / baseValue * 100
-  }));
+  if (isPercentualType) {
+    // Para índices percentuais (CDI, IPCA), calcula índice acumulado
+    // Começa com base 100 e aplica cada taxa percentual progressivamente
+    const baseIndex = 100;
+    let currentIndex = baseIndex;
+
+    return data.map((point, index) => {
+      const rate = point.rawPrice ?? point.value;
+
+      // Se não há taxa válida, mantém índice anterior
+      if (rate === null || rate === undefined) {
+        return {
+          ...point,
+          value: ((currentIndex - baseIndex) / baseIndex) * 100,
+        };
+      }
+
+      // Aplica a taxa ao índice acumulado
+      if (index === 0) {
+        currentIndex = baseIndex * (1 + rate / 100);
+      } else {
+        currentIndex = currentIndex * (1 + rate / 100);
+      }
+
+      // Retorna o retorno normalizado em relação à base 100
+      return {
+        ...point,
+        value: ((currentIndex - baseIndex) / baseIndex) * 100,
+      };
+    });
+  } else {
+    // Para ativos de preço (ações, ETFs), usa cálculo direto
+    const baseValue = data[0]?.rawPrice || data[0]?.value || 0;
+
+    if (baseValue === 0) return data;
+
+    return data.map((point) => ({
+      ...point,
+      value: ((point.rawPrice || point.value) - baseValue) / (baseValue) * 100,
+    }));
+  }
 }
 
 /**
