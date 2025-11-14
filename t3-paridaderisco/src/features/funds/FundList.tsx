@@ -97,13 +97,13 @@ export function FundList({ funds, onEdit, onRefresh }: FundListProps) {
   if (funds.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-400 mb-4">
+        <div className="dark:text-gray-400 text-gray-600 mb-4">
           <DollarSign className="h-12 w-12 mx-auto" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <h3 className="text-lg font-medium dark:text-white text-gray-900 mb-2">
           Nenhum fundo cadastrado
         </h3>
-        <p className="text-gray-500">
+        <p className="dark:text-gray-400 text-gray-600">
           Adicione seu primeiro fundo de investimento para começar a acompanhar sua rentabilidade.
         </p>
       </div>
@@ -120,7 +120,7 @@ export function FundList({ funds, onEdit, onRefresh }: FundListProps) {
           <div className="flex justify-between items-start mb-3">
             <div>
               <h3 className="font-semibold text-lg">{fund.name}</h3>
-              <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+              <div className="flex items-center gap-4 text-sm dark:text-gray-400 text-gray-600 mt-1">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
                   {formatDate(fund.investmentDate)}
@@ -157,19 +157,19 @@ export function FundList({ funds, onEdit, onRefresh }: FundListProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Investimento Inicial */}
             <div>
-              <div className="text-sm text-gray-500 mb-1">Investimento Inicial</div>
+              <div className="text-sm dark:text-gray-400 text-gray-600 mb-1">Investimento Inicial</div>
               <div className="font-medium">{formatCurrency(fund.initialInvestment)}</div>
             </div>
 
             {/* Valor Atual */}
             <div>
-              <div className="text-sm text-gray-500 mb-1">Valor Atual</div>
+              <div className="text-sm dark:text-gray-400 text-gray-600 mb-1">Valor Atual</div>
               <div className="font-medium">{formatCurrency(fund.currentValue)}</div>
             </div>
 
             {/* Ganho/Perda */}
             <div>
-              <div className="text-sm text-gray-500 mb-1">Ganho/Perda</div>
+              <div className="text-sm dark:text-gray-400 text-gray-600 mb-1">Ganho/Perda</div>
               <div className={`font-medium flex items-center gap-1 ${
                 fund.ganhoPerda >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
@@ -184,9 +184,9 @@ export function FundList({ funds, onEdit, onRefresh }: FundListProps) {
 
             {/* Rentabilidade */}
             <div>
-              <div className="text-sm text-gray-500 mb-1">Rentabilidade</div>
-              <Badge 
-                variant={fund.rentabilidade >= 0 ? "default" : "destructive"}
+              <div className="text-sm dark:text-gray-400 text-gray-600 mb-1">Rentabilidade</div>
+              <Badge
+                variant={fund.rentabilidade >= 0 ? "success" : "error"}
                 className="font-medium"
               >
                 {formatPercentage(fund.rentabilidade)}
@@ -197,7 +197,7 @@ export function FundList({ funds, onEdit, onRefresh }: FundListProps) {
           {/* Atualização Rápida de Valor */}
           <div className="mt-4 pt-3 border-t">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 min-w-fit">Atualizar valor:</span>
+              <span className="text-sm dark:text-gray-400 text-gray-600 min-w-fit">Atualizar valor:</span>
               <Input
                 type="number"
                 step="0.01"

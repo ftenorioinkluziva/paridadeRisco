@@ -149,8 +149,8 @@ export default function RetirementPage() {
               </div>
 
               {/* Situação Atual */}
-              <div className="space-y-3 p-2.5 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-xs text-gray-700">
+              <div className="space-y-3 p-2.5 dark:bg-slate-800/50 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold text-xs dark:text-slate-300 text-slate-700">
                   Situação Atual
                 </h3>
 
@@ -190,8 +190,8 @@ export default function RetirementPage() {
               </div>
 
               {/* Objetivos */}
-              <div className="space-y-3 p-2.5 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-xs text-gray-700">
+              <div className="space-y-3 p-2.5 dark:bg-slate-800/50 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold text-xs dark:text-slate-300 text-slate-700">
                   Objetivos de Aposentadoria
                 </h3>
 
@@ -220,8 +220,8 @@ export default function RetirementPage() {
               </div>
 
               {/* Premissas */}
-              <div className="space-y-3 p-2.5 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-xs text-gray-700">
+              <div className="space-y-3 p-2.5 dark:bg-slate-800/50 bg-slate-50 rounded-lg">
+                <h3 className="font-semibold text-xs dark:text-slate-300 text-slate-700">
                   Premissas de Mercado (% ao ano)
                 </h3>
 

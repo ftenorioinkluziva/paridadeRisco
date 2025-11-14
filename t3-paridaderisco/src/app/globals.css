@@ -2,73 +2,226 @@
 
 @layer base {
   :root {
-    --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
+    /* Sistema de Raios */
+    --radius: 0.75rem; /* 12px - Cards */
+    --radius-sm: 0.25rem; /* 4px - Badges */
+    --radius-md: 0.5rem; /* 8px - Inputs, buttons */
+    --radius-lg: 0.75rem; /* 12px - Cards */
+    --radius-xl: 1rem; /* 16px - Modais */
+
+    /* ========================================
+       TEMA CLARO (Light Mode)
+       ======================================== */
+
+    /* Background - Gradiente sutil azul/cinza */
+    --background: 248 250 252; /* slate-50 */
+    --foreground: 15 23 42; /* slate-900 */
+
+    /* Cards - Brancos com sombra sutil */
+    --card: 255 255 255; /* white */
+    --card-foreground: 15 23 42; /* slate-900 */
+    --card-border: 226 232 240; /* slate-200 */
+
+    /* Popovers e Menus */
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
+
+    /* Cores Primárias */
+    --primary: 37 99 235; /* blue-600 */
+    --primary-foreground: 255 255 255;
+    --primary-hover: 29 78 216; /* blue-700 */
+
+    /* Cores Secundárias */
+    --secondary: 241 245 249; /* slate-100 */
+    --secondary-foreground: 51 65 85; /* slate-700 */
+    --secondary-hover: 226 232 240; /* slate-200 */
+
+    /* Muted (texto secundário) */
+    --muted: 241 245 249; /* slate-100 */
+    --muted-foreground: 100 116 139; /* slate-500 */
+
+    /* Accent */
+    --accent: 239 246 255; /* blue-50 */
+    --accent-foreground: 30 64 175; /* blue-800 */
+
+    /* Bordas e Inputs */
+    --border: 226 232 240; /* slate-200 */
+    --input: 226 232 240; /* slate-200 */
+    --input-bg: 255 255 255; /* white */
+    --ring: 59 130 246; /* blue-500 */
+
+    /* Textos */
+    --text-primary: 15 23 42; /* slate-900 */
+    --text-secondary: 71 85 105; /* slate-600 */
+    --text-muted: 100 116 139; /* slate-500 */
+    --text-disabled: 148 163 184; /* slate-400 */
+
+    /* ========================================
+       CORES SEMÂNTICAS (Light Mode)
+       ======================================== */
+
+    /* Sucesso / Positivo */
+    --success: 22 163 74; /* green-600 */
+    --success-bg: 240 253 244; /* green-50 */
+    --success-border: 134 239 172; /* green-300 */
+    --success-text: 21 128 61; /* green-700 */
+    --success-hover: 220 252 231; /* green-100 */
+
+    /* Erro / Negativo */
+    --error: 220 38 38; /* red-600 */
+    --error-bg: 254 242 242; /* red-50 */
+    --error-border: 252 165 165; /* red-300 */
+    --error-text: 185 28 28; /* red-700 */
+    --error-hover: 254 226 226; /* red-100 */
+
+    /* Alerta / Atenção */
+    --warning: 217 119 6; /* yellow-600 */
+    --warning-bg: 254 252 232; /* yellow-50 */
+    --warning-border: 253 224 71; /* yellow-300 */
+    --warning-text: 161 98 7; /* yellow-700 */
+    --warning-hover: 254 249 195; /* yellow-100 */
+
+    /* Informação / Neutro */
+    --info: 37 99 235; /* blue-600 */
+    --info-bg: 239 246 255; /* blue-50 */
+    --info-border: 147 197 253; /* blue-300 */
+    --info-text: 29 78 216; /* blue-700 */
+    --info-hover: 219 234 254; /* blue-100 */
+
+    /* ========================================
+       CORES FINANCEIRAS (Light Mode)
+       ======================================== */
+
+    --financial-cdi: 37 99 235; /* blue-600 */
+    --financial-ipca: 22 163 74; /* green-600 */
+    --financial-selic: 124 58 237; /* purple-600 */
+    --financial-usd: 220 38 38; /* red-600 */
+    --financial-milestone: 217 119 6; /* amber-600 */
+    --financial-etf-1: 234 88 12; /* orange-600 */
+    --financial-etf-2: 147 51 234; /* purple-600 */
+    --financial-etf-3: 5 150 105; /* emerald-600 */
+    --financial-etf-4: 202 138 4; /* yellow-600 */
+    --financial-etf-5: 168 85 247; /* purple-500 */
+
+    /* Chart Colors (Light Mode) */
+    --chart-1: 37 99 235; /* blue-600 */
+    --chart-2: 22 163 74; /* green-600 */
+    --chart-3: 124 58 237; /* purple-600 */
+    --chart-4: 217 119 6; /* amber-600 */
+    --chart-5: 220 38 38; /* red-600 */
   }
 
   .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
+    /* Background Gradient (será aplicado via classe no body) */
+    /* from-slate-900 via-blue-900 to-slate-900 */
+    --background: 15 23 42; /* slate-900 */
+    --foreground: 255 255 255;
+
+    /* Cards com Glassmorphism */
+    --card: 30 41 59; /* slate-800 */
+    --card-foreground: 255 255 255;
+    --card-opacity: 0.5;
+
+    /* Popovers e Menus */
+    --popover: 30 41 59; /* slate-800 */
+    --popover-foreground: 255 255 255;
+
+    /* Cores Primárias */
+    --primary: 59 130 246; /* blue-600 */
+    --primary-foreground: 255 255 255;
+
+    /* Cores Secundárias */
+    --secondary: 71 85 105; /* slate-600 */
+    --secondary-foreground: 255 255 255;
+
+    /* Muted */
+    --muted: 51 65 85; /* slate-700 */
+    --muted-foreground: 148 163 184; /* slate-400 */
+
+    /* Accent */
+    --accent: 30 64 175; /* blue-800 */
+    --accent-foreground: 255 255 255;
+
+    /* Destrutivo */
+    --destructive: 248 113 113; /* red-400 */
+    --destructive-foreground: 255 255 255;
+
+    /* Bordas e Inputs */
+    --border: 51 65 85; /* slate-700 */
+    --input: 71 85 105; /* slate-600 */
+    --ring: 96 165 250; /* blue-400 */
+
+    /* Textos */
+    --text-primary: 255 255 255;
+    --text-secondary: 203 213 225; /* slate-300 */
+    --text-muted: 148 163 184; /* slate-400 */
+    --text-disabled: 100 116 139; /* slate-500 */
+
+    /* Cores Semânticas (Dark Mode) */
+    --success: 74 222 128; /* green-400 */
+    --success-bg: 6 78 59; /* green-900 */
+    --success-border: 21 128 61; /* green-700 */
+    --success-light: 134 239 172; /* green-300 */
+
+    --error: 248 113 113; /* red-400 */
+    --error-bg: 127 29 29; /* red-900 */
+    --error-border: 185 28 28; /* red-700 */
+    --error-icon: 239 68 68; /* red-500 */
+
+    --warning: 251 191 36; /* yellow-400 */
+    --warning-bg: 113 63 18; /* yellow-900 */
+    --warning-border: 161 98 7; /* yellow-700 */
+
+    --info: 96 165 250; /* blue-400 */
+    --info-bg: 30 58 138; /* blue-900 */
+    --info-border: 29 78 216; /* blue-700 */
+    --info-light: 147 197 253; /* blue-300 */
+
+    /* Chart Colors (optimized for dark) */
+    --chart-1: 59 130 246; /* blue-500 */
+    --chart-2: 16 185 129; /* green-500 */
+    --chart-3: 139 92 246; /* purple-500 */
+    --chart-4: 245 158 11; /* amber-500 */
+    --chart-5: 239 68 68; /* red-500 */
   }
 
   * {
-    border-color: var(--border);
+    border-color: rgb(var(--border));
   }
 
   body {
-    background-color: var(--background);
-    color: var(--foreground);
+    color: rgb(var(--foreground));
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  /* ========================================
+     LIGHT MODE STYLES
+     ======================================== */
+
+  body:not(.dark) {
+    /* Background com gradiente sutil azul/cinza */
+    background: linear-gradient(to bottom right, #f8fafc, #e0f2fe, #f1f5f9);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  /* ========================================
+     DARK MODE STYLES
+     ======================================== */
+
+  body.dark {
+    /* Background gradient azul escuro */
+    background: linear-gradient(to bottom right, #0f172a, #1e3a8a, #0f172a);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
 }
 
 @layer utilities {
-  /* Charts UI/UX Animations */
-  
+  /* ========================================
+     ANIMAÇÕES E TRANSIÇÕES
+     ======================================== */
+
   /* Fade in up animation */
   @keyframes fadeInUp {
     from {
@@ -80,24 +233,24 @@
       transform: translateY(0);
     }
   }
-  
+
   .animate-fade-in-up {
     animation: fadeInUp 0.3s ease-out;
   }
-  
+
   /* Fade in with delay variations */
   .animate-fade-in-up-delay-100 {
     animation: fadeInUp 0.3s ease-out 0.1s both;
   }
-  
+
   .animate-fade-in-up-delay-200 {
     animation: fadeInUp 0.3s ease-out 0.2s both;
   }
-  
+
   .animate-fade-in-up-delay-300 {
     animation: fadeInUp 0.3s ease-out 0.3s both;
   }
-  
+
   /* Scale fade in animation */
   @keyframes scaleIn {
     from {
@@ -109,11 +262,11 @@
       transform: scale(1);
     }
   }
-  
+
   .animate-scale-in {
     animation: scaleIn 0.2s ease-out;
   }
-  
+
   /* Slide in from left */
   @keyframes slideInLeft {
     from {
@@ -125,11 +278,11 @@
       transform: translateX(0);
     }
   }
-  
+
   .animate-slide-in-left {
     animation: slideInLeft 0.3s ease-out;
   }
-  
+
   /* Gentle bounce animation */
   @keyframes gentleBounce {
     0%, 20%, 50%, 80%, 100% {
@@ -142,11 +295,11 @@
       transform: translateY(-2px);
     }
   }
-  
+
   .animate-gentle-bounce {
     animation: gentleBounce 1s ease-in-out;
   }
-  
+
   /* Shimmer effect for loading states */
   @keyframes shimmer {
     0% {
@@ -156,33 +309,33 @@
       background-position: calc(200px + 100%) 0;
     }
   }
-  
+
   .animate-shimmer {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200px 100%;
     animation: shimmer 1.5s infinite;
   }
-  
+
   /* Dark mode shimmer */
   .dark .animate-shimmer {
     background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
     background-size: 200px 100%;
   }
-  
+
   /* Hover grow animation */
   .hover-grow {
     transition: transform 0.2s ease-in-out;
   }
-  
+
   .hover-grow:hover {
     transform: scale(1.02);
   }
-  
+
   /* Smooth height transitions */
   .transition-height {
     transition: height 0.3s ease-in-out;
   }
-  
+
   /* Loading spinner animation */
   @keyframes spin-slow {
     from {
@@ -192,8 +345,223 @@
       transform: rotate(360deg);
     }
   }
-  
+
   .animate-spin-slow {
     animation: spin-slow 3s linear infinite;
+  }
+
+  /* Accordion animations */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  .animate-accordion-down {
+    animation: accordion-down 0.2s ease-out;
+  }
+
+  .animate-accordion-up {
+    animation: accordion-up 0.2s ease-out;
+  }
+
+  /* ========================================
+     GLASSMORPHISM E EFEITOS VISUAIS
+     ======================================== */
+
+  /* DARK MODE - Card glassmorphism */
+  .dark .glass-card {
+    background-color: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .dark .glass-card-hover {
+    transition: all 200ms ease-out;
+  }
+
+  .dark .glass-card-hover:hover {
+    background-color: rgba(30, 41, 59, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark .glass-card-active {
+    background: linear-gradient(to right, rgba(30, 58, 138, 0.3), rgba(30, 64, 175, 0.2));
+    border-color: rgba(37, 99, 235, 0.5);
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1), 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* LIGHT MODE - Card styles */
+  body:not(.dark) .glass-card {
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  body:not(.dark) .glass-card-hover {
+    transition: all 200ms ease-out;
+  }
+
+  body:not(.dark) .glass-card-hover:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  body:not(.dark) .glass-card-active {
+    background: linear-gradient(to right, rgba(219, 234, 254, 0.8), rgba(239, 246, 255, 0.6));
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1), 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  /* ========================================
+     FOCUS STATES E ACESSIBILIDADE
+     ======================================== */
+
+  .focus-ring {
+    outline: 2px solid rgb(96 165 250);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+
+  /* Screen reader only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* ========================================
+     INDICADORES E STATUS
+     ======================================== */
+
+  /* DARK MODE - Status cards */
+  .dark .status-card-success {
+    background: rgba(6, 78, 59, 0.2);
+    border-left: 4px solid rgb(74 222 128);
+    border-top: 1px solid rgb(21 128 61);
+    border-right: 1px solid rgb(21 128 61);
+    border-bottom: 1px solid rgb(21 128 61);
+  }
+
+  .dark .status-card-error {
+    background: rgba(127, 29, 29, 0.2);
+    border-left: 4px solid rgb(248 113 113);
+    border-top: 1px solid rgb(185 28 28);
+    border-right: 1px solid rgb(185 28 28);
+    border-bottom: 1px solid rgb(185 28 28);
+  }
+
+  .dark .status-card-warning {
+    background: rgba(113, 63, 18, 0.2);
+    border-left: 4px solid rgb(251 191 36);
+    border-top: 1px solid rgb(161 98 7);
+    border-right: 1px solid rgb(161 98 7);
+    border-bottom: 1px solid rgb(161 98 7);
+  }
+
+  .dark .status-card-info {
+    background: rgba(30, 58, 138, 0.2);
+    border-left: 4px solid rgb(96 165 250);
+    border-top: 1px solid rgb(29 78 216);
+    border-right: 1px solid rgb(29 78 216);
+    border-bottom: 1px solid rgb(29 78 216);
+  }
+
+  /* LIGHT MODE - Status cards */
+  body:not(.dark) .status-card-success {
+    background: rgb(240 253 244); /* green-50 */
+    border-left: 4px solid rgb(22 163 74); /* green-600 */
+    border-top: 1px solid rgb(134 239 172); /* green-300 */
+    border-right: 1px solid rgb(134 239 172);
+    border-bottom: 1px solid rgb(134 239 172);
+  }
+
+  body:not(.dark) .status-card-error {
+    background: rgb(254 242 242); /* red-50 */
+    border-left: 4px solid rgb(220 38 38); /* red-600 */
+    border-top: 1px solid rgb(252 165 165); /* red-300 */
+    border-right: 1px solid rgb(252 165 165);
+    border-bottom: 1px solid rgb(252 165 165);
+  }
+
+  body:not(.dark) .status-card-warning {
+    background: rgb(254 252 232); /* yellow-50 */
+    border-left: 4px solid rgb(217 119 6); /* yellow-600 */
+    border-top: 1px solid rgb(253 224 71); /* yellow-300 */
+    border-right: 1px solid rgb(253 224 71);
+    border-bottom: 1px solid rgb(253 224 71);
+  }
+
+  body:not(.dark) .status-card-info {
+    background: rgb(239 246 255); /* blue-50 */
+    border-left: 4px solid rgb(37 99 235); /* blue-600 */
+    border-top: 1px solid rgb(147 197 253); /* blue-300 */
+    border-right: 1px solid rgb(147 197 253);
+    border-bottom: 1px solid rgb(147 197 253);
+  }
+
+  /* ========================================
+     TRANSIÇÕES PADRÃO
+     ======================================== */
+
+  .transition-fast {
+    transition: all 150ms ease-out;
+  }
+
+  .transition-default {
+    transition: all 200ms ease-out;
+  }
+
+  .transition-medium {
+    transition: all 300ms ease-out;
+  }
+
+  /* ========================================
+     SHADOWS E ELEVAÇÃO
+     ======================================== */
+
+  .shadow-card {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-card-hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-modal {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-glow-success {
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+  }
+
+  .shadow-glow-error {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+  }
+
+  .shadow-glow-info {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
   }
 }

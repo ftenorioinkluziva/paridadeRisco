@@ -81,14 +81,14 @@ export function DataUpdateManager() {
 
   const getStatusBadge = (isOutdated: boolean, lastUpdate: Date | null) => {
     if (!lastUpdate) {
-      return <Badge variant="destructive">Sem dados</Badge>;
+      return <Badge variant="error">Sem dados</Badge>;
     }
-    
+
     if (isOutdated) {
-      return <Badge variant="secondary">Desatualizado</Badge>;
+      return <Badge variant="warning">Desatualizado</Badge>;
     }
-    
-    return <Badge variant="default">Atualizado</Badge>;
+
+    return <Badge variant="success">Atualizado</Badge>;
   };
 
   const getStatusIcon = (isOutdated: boolean, lastUpdate: Date | null) => {
@@ -321,7 +321,7 @@ export function DataUpdateManager() {
             </div>
             
             {schedulerStatusQuery.data?.nextRuns && schedulerStatusQuery.data.nextRuns.length > 0 && (
-              <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="p-3 dark:bg-slate-800/50 bg-slate-50 rounded-lg">
                 <div className="font-medium text-sm mb-2">Próximas Execuções:</div>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {schedulerStatusQuery.data.nextRuns.map((run, index) => (

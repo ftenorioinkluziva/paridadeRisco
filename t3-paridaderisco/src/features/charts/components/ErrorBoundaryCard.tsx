@@ -51,37 +51,37 @@ export const ErrorBoundaryCard: React.FC<ErrorBoundaryCardProps> = ({
         title: "Problema de Conexão",
         message: "Não foi possível conectar ao servidor. Verifique sua conexão com a internet.",
         suggestions: ["Verifique sua conexão com a internet", "Tente novamente em alguns segundos"],
-        badge: { text: "Conexão", variant: "destructive" as const }
+        badge: { text: "Conexão", variant: "error" as const }
       },
       timeout: {
         title: "Timeout",
         message: "A requisição demorou mais que o esperado para responder.",
         suggestions: ["Tente um período menor", "Aguarde alguns segundos e tente novamente"],
-        badge: { text: "Timeout", variant: "secondary" as const }
+        badge: { text: "Timeout", variant: "warning" as const }
       },
       not_found: {
         title: "Dados Não Encontrados",
         message: "Os dados solicitados não foram encontrados no servidor.",
         suggestions: ["Verifique se o ativo selecionado é válido", "Tente selecionar um período diferente"],
-        badge: { text: "404", variant: "secondary" as const }
+        badge: { text: "404", variant: "warning" as const }
       },
       unauthorized: {
         title: "Acesso Negado",
         message: "Você não tem permissão para acessar estes dados.",
         suggestions: ["Faça login novamente", "Verifique suas credenciais"],
-        badge: { text: "Não Autorizado", variant: "destructive" as const }
+        badge: { text: "Não Autorizado", variant: "error" as const }
       },
       server: {
         title: "Erro do Servidor",
         message: "Ocorreu um problema interno no servidor.",
         suggestions: ["Tente novamente em alguns minutos", "Contacte o suporte se o problema persistir"],
-        badge: { text: "Servidor", variant: "destructive" as const }
+        badge: { text: "Servidor", variant: "error" as const }
       },
       unknown: {
         title: "Erro Inesperado",
         message: fallback,
         suggestions: suggestions.length > 0 ? suggestions : ["Tente recarregar a página", "Contacte o suporte"],
-        badge: { text: "Erro", variant: "secondary" as const }
+        badge: { text: "Erro", variant: "warning" as const }
       }
     };
 

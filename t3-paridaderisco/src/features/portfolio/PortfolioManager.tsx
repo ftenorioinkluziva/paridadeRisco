@@ -247,17 +247,17 @@ export function PortfolioManager() {
                               {allocation.toFixed(1)}%
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                            <div 
-                              className="bg-primary h-2 rounded-full" 
+                          <div className="w-full dark:bg-slate-700 bg-slate-200 rounded-full h-2 mt-1">
+                            <div
+                              className="dark:bg-blue-500 bg-blue-600 h-2 rounded-full"
                               style={{ width: `${allocation}%` }}
                             />
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">{formatCurrency(position.currentValue)}</div>
-                          <div className={`text-sm ${
-                            position.unrealizedGain >= 0 ? 'text-green-600' : 'text-red-600'
+                          <div className="font-medium dark:text-white text-slate-900">{formatCurrency(position.currentValue)}</div>
+                          <div className={`text-sm font-medium ${
+                            position.unrealizedGain >= 0 ? 'dark:text-green-400 text-green-700' : 'dark:text-red-400 text-red-700'
                           }`}>
                             {formatCurrency(position.unrealizedGain)}
                           </div>
@@ -271,8 +271,8 @@ export function PortfolioManager() {
                     const allocation = totalAllocationValue > 0 ? (fund.currentValue / totalAllocationValue) * 100 : 0;
                     return (
                       <div key={`fund-${fund.id}`} className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                          <PiggyBank className="w-5 h-5 text-green-600" />
+                        <div className="w-12 h-12 dark:bg-green-900/30 bg-green-100 rounded-full flex items-center justify-center">
+                          <PiggyBank className="w-5 h-5 dark:text-green-400 text-green-600" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
@@ -283,22 +283,22 @@ export function PortfolioManager() {
                               {allocation.toFixed(1)}%
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                            <div 
-                              className="bg-green-600 h-2 rounded-full" 
+                          <div className="w-full dark:bg-slate-700 bg-slate-200 rounded-full h-2 mt-1">
+                            <div
+                              className="dark:bg-green-500 bg-green-600 h-2 rounded-full"
                               style={{ width: `${allocation}%` }}
                             />
                           </div>
                           {fund.indice && (
-                            <div className="text-xs text-gray-500 mt-1">
+                            <div className="text-xs dark:text-slate-400 text-slate-600 mt-1">
                               Vinculado: {fund.indice.ticker}
                             </div>
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="font-medium">{formatCurrency(fund.currentValue)}</div>
-                          <div className={`text-sm ${
-                            fund.ganhoPerda >= 0 ? 'text-green-600' : 'text-red-600'
+                          <div className="font-medium dark:text-white text-slate-900">{formatCurrency(fund.currentValue)}</div>
+                          <div className={`text-sm font-medium ${
+                            fund.ganhoPerda >= 0 ? 'dark:text-green-400 text-green-700' : 'dark:text-red-400 text-red-700'
                           }`}>
                             {formatCurrency(fund.ganhoPerda)}
                           </div>
@@ -319,31 +319,33 @@ export function PortfolioManager() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Custo Total Investido</span>
-                    <span className="font-bold">{formatCurrency(totalCost)}</span>
+                  <div className="flex items-center justify-between p-4 dark:bg-slate-800/50 bg-blue-50 border dark:border-slate-700 border-blue-200 rounded-lg">
+                    <span className="font-medium dark:text-slate-300 text-slate-700">Custo Total Investido</span>
+                    <span className="font-bold dark:text-white text-slate-900">{formatCurrency(totalCost)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Valor Atual das Posições</span>
-                    <span className="font-bold">{formatCurrency(positionsValue)}</span>
+                  <div className="flex items-center justify-between p-4 dark:bg-slate-800/50 bg-blue-50 border dark:border-slate-700 border-blue-200 rounded-lg">
+                    <span className="font-medium dark:text-slate-300 text-slate-700">Valor Atual das Posições</span>
+                    <span className="font-bold dark:text-white text-slate-900">{formatCurrency(positionsValue)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium">Valor dos Fundos</span>
-                    <span className="font-bold">{formatCurrency(fundsValue)}</span>
+                  <div className="flex items-center justify-between p-4 dark:bg-slate-800/50 bg-blue-50 border dark:border-slate-700 border-blue-200 rounded-lg">
+                    <span className="font-medium dark:text-slate-300 text-slate-700">Valor dos Fundos</span>
+                    <span className="font-bold dark:text-white text-slate-900">{formatCurrency(fundsValue)}</span>
                   </div>
-                  <div className={`flex items-center justify-between p-3 rounded-lg ${
-                    totalGain >= 0 ? 'bg-green-50' : 'bg-red-50'
+                  <div className={`flex items-center justify-between p-4 rounded-lg border ${
+                    totalGain >= 0
+                      ? 'dark:bg-green-900/20 bg-green-50 dark:border-green-700 border-green-200'
+                      : 'dark:bg-red-900/20 bg-red-50 dark:border-red-700 border-red-200'
                   }`}>
-                    <span className="font-medium">Ganho/Perda Total</span>
+                    <span className="font-medium dark:text-slate-300 text-slate-700">Ganho/Perda Total</span>
                     <span className={`font-bold ${
-                      totalGain >= 0 ? 'text-green-600' : 'text-red-600'
+                      totalGain >= 0 ? 'dark:text-green-400 text-green-700' : 'dark:text-red-400 text-red-700'
                     }`}>
                       {formatCurrency(totalGain)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <span className="font-medium">Número de Ativos</span>
-                    <span className="font-bold">{portfolioData.positions.length}</span>
+                  <div className="flex items-center justify-between p-4 dark:bg-slate-800/50 bg-blue-50 border dark:border-slate-700 border-blue-200 rounded-lg">
+                    <span className="font-medium dark:text-slate-300 text-slate-700">Número de Ativos</span>
+                    <span className="font-bold dark:text-white text-slate-900">{portfolioData.positions.length}</span>
                   </div>
                 </div>
               </CardContent>
@@ -391,7 +393,7 @@ export function PortfolioManager() {
                         <div className="text-sm text-muted-foreground">
                           {formatPercent(position.totalCost > 0 ? (position.unrealizedGain / position.totalCost) * 100 : 0)}
                         </div>
-                        <Badge variant={position.unrealizedGain >= 0 ? "default" : "destructive"} className="mt-1">
+                        <Badge variant={position.unrealizedGain >= 0 ? "success" : "error"} className="mt-1">
                           {position.unrealizedGain >= 0 ? "Ganho" : "Perda"}
                         </Badge>
                       </div>
@@ -422,7 +424,7 @@ export function PortfolioManager() {
               </CardHeader>
               <CardContent>
                 {/* Cash Inclusion Toggle */}
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mb-4 p-3 dark:bg-slate-800/50 bg-slate-50 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
@@ -435,13 +437,13 @@ export function PortfolioManager() {
                       Incluir caixa na base de cálculo
                     </label>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1 ml-7">
-                    {includeCashInBase 
+                  <p className="text-xs dark:text-gray-400 text-gray-600 mt-1 ml-7">
+                    {includeCashInBase
                       ? 'Percentuais calculados sobre: Posições + Fundos + Caixa'
                       : 'Percentuais calculados sobre: Posições + Fundos (sem caixa)'
                     }
                   </p>
-                  <div className="text-xs text-gray-500 mt-2 ml-7">
+                  <div className="text-xs dark:text-gray-400 text-gray-600 mt-2 ml-7">
                     <div>• Valor investido: {formatCurrency(positionsValue + fundsValue)}</div>
                     <div>• Caixa disponível: {formatCurrency(cashBalance)}</div>
                     <div className="font-semibold">• Base de cálculo: {formatCurrency(includeCashInBase ? positionsValue + fundsValue + cashBalance : positionsValue + fundsValue)}</div>
@@ -459,9 +461,9 @@ export function PortfolioManager() {
                   ) : (
                     <div className="space-y-2">
                       {cestasQuery.data?.map((cesta) => (
-                        <div 
+                        <div
                           key={cesta.id}
-                          className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                          className={`p-3 border rounded-lg cursor-pointer dark:hover:bg-slate-800/50 hover:bg-slate-50 ${
                             selectedBasketId === cesta.id ? 'border-primary bg-primary/5' : ''
                           }`}
                           onClick={() => {
@@ -518,7 +520,7 @@ export function PortfolioManager() {
                       </div>
                       {rebalanceData.includeCashInBase && (
                         <div className="flex items-center justify-between mb-2 text-sm">
-                          <span className="text-gray-600">• Valor Investido:</span>
+                          <span className="dark:text-gray-400 text-gray-600">• Valor Investido:</span>
                           <span className="font-medium">
                             {formatCurrency(rebalanceData.currentInvestedValue || 0)}
                           </span>
@@ -526,7 +528,7 @@ export function PortfolioManager() {
                       )}
                       {rebalanceData.includeCashInBase && (
                         <div className="flex items-center justify-between mb-2 text-sm">
-                          <span className="text-gray-600">• Caixa Disponível:</span>
+                          <span className="dark:text-gray-400 text-gray-600">• Caixa Disponível:</span>
                           <span className="font-medium">
                             {formatCurrency(rebalanceData.currentCashBalance || 0)}
                           </span>
@@ -576,7 +578,7 @@ export function PortfolioManager() {
                           <div className="p-3 space-y-3">
                             {/* Quantidade */}
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">{formatNumberByAssetClass(Math.abs(suggestion.shareDifference), suggestion.ativo.type)} ações</span>
+                              <span className="text-sm dark:text-gray-400 text-gray-600">{formatNumberByAssetClass(Math.abs(suggestion.shareDifference), suggestion.ativo.type)} ações</span>
                               <span className="font-bold text-lg">
                                 {formatCurrency(suggestion.estimatedCost)}
                               </span>
@@ -585,14 +587,14 @@ export function PortfolioManager() {
                             {/* Alocação atual vs target */}
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-gray-600">Atual: {suggestion.currentPercent?.toFixed(1)}%</span>
-                                <span className="text-gray-400">→</span>
+                                <span className="dark:text-gray-400 text-gray-600">Atual: {suggestion.currentPercent?.toFixed(1)}%</span>
+                                <span className="dark:text-gray-500 text-gray-400">→</span>
                                 <span className="font-medium text-blue-600">Target: {suggestion.targetPercentage?.toFixed(1)}%</span>
                               </div>
 
                               {/* Barra de progresso com escala baseada no target */}
                               <div className="relative">
-                                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                <div className="w-full dark:bg-gray-700 bg-gray-200 rounded-full h-3 overflow-hidden">
                                   {(() => {
                                     const current = suggestion.currentPercent || 0;
                                     const target = suggestion.targetPercentage || 0;
@@ -641,7 +643,7 @@ export function PortfolioManager() {
                             </div>
 
                             {/* Shares atuais */}
-                            <div className="text-xs text-gray-500 pt-1 border-t">
+                            <div className="text-xs dark:text-gray-400 text-gray-600 pt-1 border-t">
                               Shares atuais: {formatNumberByAssetClass(suggestion.currentShares || 0, suggestion.ativo.type)}
                             </div>
                           </div>
