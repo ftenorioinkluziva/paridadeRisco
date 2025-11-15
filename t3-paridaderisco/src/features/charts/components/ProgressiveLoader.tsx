@@ -29,7 +29,7 @@ export const ProgressiveLoader: React.FC<ProgressiveLoaderProps> = ({
         title: "Conectando...",
         message: message || "Estabelecendo conexão com o servidor",
         color: "text-blue-500",
-        bgColor: "bg-blue-50"
+        bgColor: "bg-primary/10"
       },
       fetching: {
         icon: <Database className="h-5 w-5 animate-pulse" />,
@@ -46,11 +46,11 @@ export const ProgressiveLoader: React.FC<ProgressiveLoaderProps> = ({
         bgColor: "bg-orange-50"
       },
       rendering: {
-        icon: <div className="h-5 w-5 bg-green-500 rounded animate-pulse" />,
+        icon: <div className="h-5 w-5 bg-success/100 rounded animate-pulse" />,
         title: "Renderizando...",
         message: message || "Preparando visualização do gráfico",
         color: "text-green-500",
-        bgColor: "bg-green-50"
+        bgColor: "bg-success/10"
       }
     };
 
@@ -139,7 +139,7 @@ export const ProgressiveLoader: React.FC<ProgressiveLoaderProps> = ({
                   isCompleted
                     ? "text-green-600 font-medium"
                     : isActive
-                    ? "text-blue-600 font-medium"
+                    ? "text-primary font-medium"
                     : "text-muted-foreground"
                 }`}
               >

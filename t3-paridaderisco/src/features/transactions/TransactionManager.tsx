@@ -158,14 +158,14 @@ export function TransactionManager() {
       </div>
 
       {/* Cash Balance Alert */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-primary/30 bg-primary/10">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <DollarSign className="h-8 w-8 text-blue-600" />
+              <DollarSign className="h-8 w-8 text-primary" />
               <div>
                 <h3 className="font-semibold text-blue-900">Saldo Disponível</h3>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-primary">
                   {formatCurrency(currentCashBalance)}
                 </p>
               </div>
@@ -176,7 +176,7 @@ export function TransactionManager() {
                 setNewCashBalance(currentCashBalance.toString());
                 setShowUpdateCashModal(true);
               }}
-              className="text-blue-600 border-blue-300 hover:bg-blue-100"
+              className="text-primary border-primary/40 hover:bg-primary/20"
             >
               Atualizar
             </Button>
@@ -440,7 +440,7 @@ export function TransactionManager() {
                     <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div className={`w-3 h-3 rounded-full ${
-                          transaction.type === "COMPRA" ? 'bg-green-500' : 'bg-red-500'
+                          transaction.type === "COMPRA" ? 'bg-success/100' : 'bg-destructive/100'
                         }`} />
                         <div>
                           <div className="flex items-center space-x-2">
@@ -493,7 +493,7 @@ export function TransactionManager() {
                     
                     return (
                       <>
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg">
                           <div className="flex items-center space-x-2">
                             <TrendingUp className="h-5 w-5 text-green-600" />
                             <span className="font-medium">Total Compras</span>
@@ -503,7 +503,7 @@ export function TransactionManager() {
                             <div className="text-sm text-green-600">{formatCurrency(volumeCompras)}</div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
                           <div className="flex items-center space-x-2">
                             <TrendingDown className="h-5 w-5 text-red-600" />
                             <span className="font-medium">Total Vendas</span>
@@ -513,12 +513,12 @@ export function TransactionManager() {
                             <div className="text-sm text-red-600">{formatCurrency(volumeVendas)}</div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
                           <div className="flex items-center space-x-2">
-                            <DollarSign className="h-5 w-5 text-blue-600" />
+                            <DollarSign className="h-5 w-5 text-primary" />
                             <span className="font-medium">Volume Total</span>
                           </div>
-                          <span className="font-bold text-blue-600">
+                          <span className="font-bold text-primary">
                             {formatCurrency(volumeTotal)}
                           </span>
                         </div>

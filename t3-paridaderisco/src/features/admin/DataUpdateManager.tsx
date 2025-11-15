@@ -162,9 +162,9 @@ export function DataUpdateManager() {
 
       {/* Last Update Status */}
       {lastUpdateStatus === "success" && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-success/30 bg-success/10">
           <CardHeader>
-            <CardTitle className="flex items-center text-green-700">
+            <CardTitle className="flex items-center text-success">
               <CheckCircle className="mr-2 h-5 w-5" />
               Atualização Concluída
             </CardTitle>
@@ -176,7 +176,7 @@ export function DataUpdateManager() {
       )}
 
       {lastUpdateStatus === "error" && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 bg-destructive/10">
           <CardHeader>
             <CardTitle className="flex items-center text-red-700">
               <AlertTriangle className="mr-2 h-5 w-5" />

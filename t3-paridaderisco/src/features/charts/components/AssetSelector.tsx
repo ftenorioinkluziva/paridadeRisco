@@ -31,13 +31,13 @@ interface AssetSelectorProps {
 }
 
 const AssetTypeColors: Record<string, string> = {
-  "ETF": "bg-blue-100 text-blue-800 border-blue-300",
-  "STOCK": "bg-green-100 text-green-800 border-green-300",
-  "INDEX": "bg-purple-100 text-purple-800 border-purple-300",
-  "Index": "bg-purple-100 text-purple-800 border-purple-300",
-  "CDI": "bg-yellow-100 text-yellow-800 border-yellow-300",
-  "FUND": "bg-orange-100 text-orange-800 border-orange-300",
-  "Currency": "bg-teal-100 text-teal-800 border-teal-300",
+  "ETF": "bg-primary/20 text-primary border-primary/40",
+  "STOCK": "bg-success/20 text-success border-success/40",
+  "INDEX": "bg-chart-4/20 text-chart-4 border-chart-4/40",
+  "Index": "bg-chart-4/20 text-chart-4 border-chart-4/40",
+  "CDI": "bg-warning/20 text-warning border-warning/40",
+  "FUND": "bg-chart-1/20 text-chart-1 border-chart-1/40",
+  "Currency": "bg-chart-2/20 text-chart-2 border-chart-2/40",
 };
 
 const AssetTypeLabels: Record<string, string> = {

@@ -427,7 +427,7 @@ export function CestaViewer() {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-destructive/10"
                                   onClick={() => {
                                     removeAssetMutation.mutate({
                                       cestaId: selectedBasket!,
@@ -759,7 +759,7 @@ function BasketPerformanceRow({ cestaId, cestaName, ativosCount, dateRange, onCl
 
   if (performanceQuery.error) {
     return (
-      <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
+      <div className="flex items-center justify-between p-3 border rounded-lg bg-destructive/10">
         <div>
           <div className="font-medium">{cestaName}</div>
           <div className="text-sm text-muted-foreground">{ativosCount} ativos</div>

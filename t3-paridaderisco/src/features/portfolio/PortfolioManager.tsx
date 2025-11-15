@@ -271,7 +271,7 @@ export function PortfolioManager() {
                     const allocation = totalAllocationValue > 0 ? (fund.currentValue / totalAllocationValue) * 100 : 0;
                     return (
                       <div key={`fund-${fund.id}`} className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <div className="w-12 h-12 bg-success/20 rounded-full flex items-center justify-center">
                           <PiggyBank className="w-5 h-5 text-green-600" />
                         </div>
                         <div className="flex-1">
@@ -285,7 +285,7 @@ export function PortfolioManager() {
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                             <div 
-                              className="bg-green-600 h-2 rounded-full" 
+                              className="bg-success h-2 rounded-full" 
                               style={{ width: `${allocation}%` }}
                             />
                           </div>
@@ -332,7 +332,7 @@ export function PortfolioManager() {
                     <span className="font-bold">{formatCurrency(fundsValue)}</span>
                   </div>
                   <div className={`flex items-center justify-between p-3 rounded-lg ${
-                    totalGain >= 0 ? 'bg-green-50' : 'bg-red-50'
+                    totalGain >= 0 ? 'bg-success/10' : 'bg-destructive/10'
                   }`}>
                     <span className="font-medium">Ganho/Perda Total</span>
                     <span className={`font-bold ${
@@ -341,7 +341,7 @@ export function PortfolioManager() {
                       {formatCurrency(totalGain)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
                     <span className="font-medium">Número de Ativos</span>
                     <span className="font-bold">{portfolioData.positions.length}</span>
                   </div>
@@ -429,7 +429,7 @@ export function PortfolioManager() {
                       id="includeCash"
                       checked={includeCashInBase}
                       onChange={(e) => setIncludeCashInBase(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-blue-500"
                     />
                     <label htmlFor="includeCash" className="font-medium text-sm">
                       Incluir caixa na base de cálculo
@@ -507,12 +507,12 @@ export function PortfolioManager() {
                   </div>
                 ) : rebalanceData ? (
                   <div className="space-y-4">
-                    <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="p-3 bg-primary/10 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium">
                           {rebalanceData.includeCashInBase ? 'Valor Total (com caixa)' : 'Valor Investido'}
                         </span>
-                        <span className="font-bold text-blue-600">
+                        <span className="font-bold text-primary">
                           {formatCurrency(rebalanceData.currentPortfolioValue || 0)}
                         </span>
                       </div>
@@ -534,7 +534,7 @@ export function PortfolioManager() {
                       )}
                       <div className="flex items-center justify-between">
                         <span className="font-medium">Custo Estimado</span>
-                        <span className="font-bold text-blue-600">
+                        <span className="font-bold text-primary">
                           {formatCurrency(rebalanceData.totalEstimatedCost)}
                         </span>
                       </div>
@@ -552,13 +552,13 @@ export function PortfolioManager() {
                       <h4 className="font-semibold">Transações Recomendadas:</h4>
                       {rebalanceData.suggestions.map((suggestion: any, index: number) => (
                         <div key={index} className={`border rounded-lg overflow-hidden ${
-                          suggestion.action === 'COMPRA' ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-muted/30'
+                          suggestion.action === 'COMPRA' ? 'border-success/30 bg-success/10/30' : 'border-gray-200 bg-muted/30'
                         }`}>
                           {/* Header com ticker e badge */}
                           <div className="flex items-center justify-between p-3 border-b bg-white/50">
                             <div className="flex items-center space-x-3">
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                                suggestion.action === 'COMPRA' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-foreground'
+                                suggestion.action === 'COMPRA' ? 'bg-success/20 text-success' : 'bg-gray-100 text-foreground'
                               }`}>
                                 {suggestion.ativo.ticker.substring(0, 3)}
                               </div>
@@ -587,7 +587,7 @@ export function PortfolioManager() {
                               <div className="flex items-center justify-between text-xs">
                                 <span className="text-gray-600">Atual: {suggestion.currentPercent?.toFixed(1)}%</span>
                                 <span className="text-gray-400">→</span>
-                                <span className="font-medium text-blue-600">Target: {suggestion.targetPercentage?.toFixed(1)}%</span>
+                                <span className="font-medium text-primary">Target: {suggestion.targetPercentage?.toFixed(1)}%</span>
                               </div>
 
                               {/* Barra de progresso com escala baseada no target */}
@@ -604,10 +604,10 @@ export function PortfolioManager() {
                                         <div
                                           className={`h-3 rounded-full transition-all ${
                                             percentOfTarget < 100
-                                              ? 'bg-yellow-500'
+                                              ? 'bg-warning/100'
                                               : percentOfTarget === 100
-                                              ? 'bg-green-500'
-                                              : 'bg-blue-500'
+                                              ? 'bg-success/100'
+                                              : 'bg-primary/100'
                                           }`}
                                           style={{ width: `${Math.min(percentOfTarget, 100)}%` }}
                                         />
@@ -615,7 +615,7 @@ export function PortfolioManager() {
                                         {/* Indicador de over-allocation se > 100% */}
                                         {percentOfTarget > 100 && (
                                           <div
-                                            className="absolute top-0 left-0 h-3 bg-red-500/30 rounded-full"
+                                            className="absolute top-0 left-0 h-3 bg-destructive/100/30 rounded-full"
                                             style={{ width: '100%' }}
                                           />
                                         )}
@@ -627,7 +627,7 @@ export function PortfolioManager() {
                                 {/* Texto indicativo do progresso */}
                                 <div className="flex items-center justify-between mt-1">
                                   <span className="text-[10px] text-gray-500">0%</span>
-                                  <span className="text-[10px] font-medium text-blue-600">
+                                  <span className="text-[10px] font-medium text-primary">
                                     {(() => {
                                       const current = suggestion.currentPercent || 0;
                                       const target = suggestion.targetPercentage || 0;
@@ -635,7 +635,7 @@ export function PortfolioManager() {
                                       return `${percentOfTarget.toFixed(0)}% do target`;
                                     })()}
                                   </span>
-                                  <span className="text-[10px] text-blue-600">100%</span>
+                                  <span className="text-[10px] text-primary">100%</span>
                                 </div>
                               </div>
                             </div>
@@ -650,7 +650,7 @@ export function PortfolioManager() {
                       
                       {rebalanceData.suggestions.length === 0 && (
                         <div className="text-center p-8 text-muted-foreground">
-                          <div className="mx-auto h-12 w-12 mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                          <div className="mx-auto h-12 w-12 mb-4 bg-success/20 rounded-full flex items-center justify-center">
                             <TrendingUp className="h-6 w-6 text-green-600" />
                           </div>
                           <p>Portfolio já está balanceado!</p>
@@ -679,7 +679,7 @@ export function PortfolioManager() {
                     .sort((a, b) => b.unrealizedGain - a.unrealizedGain)
                     .slice(0, 5)
                     .map((position) => (
-                      <div key={position.ativo.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                      <div key={position.ativo.id} className="flex items-center justify-between p-2 bg-success/10 rounded-lg">
                         <span className="font-medium">{position.ativo.ticker}</span>
                         <span className="font-bold text-green-600">
                           {formatCurrency(position.unrealizedGain)}
@@ -705,7 +705,7 @@ export function PortfolioManager() {
                     .sort((a, b) => a.unrealizedGain - b.unrealizedGain)
                     .slice(0, 5)
                     .map((position) => (
-                      <div key={position.ativo.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                      <div key={position.ativo.id} className="flex items-center justify-between p-2 bg-destructive/10 rounded-lg">
                         <span className="font-medium">{position.ativo.ticker}</span>
                         <span className="font-bold text-red-600">
                           {formatCurrency(position.unrealizedGain)}
@@ -731,7 +731,7 @@ export function PortfolioManager() {
                     .sort((a, b) => b.ganhoPerda - a.ganhoPerda)
                     .slice(0, 5)
                     .map((fund) => (
-                      <div key={fund.id} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                      <div key={fund.id} className="flex items-center justify-between p-2 bg-success/10 rounded-lg">
                         <span className="font-medium text-xs">{fund.name.substring(0, 12)}...</span>
                         <span className="font-bold text-green-600 text-xs">
                           {formatCurrency(fund.ganhoPerda)}
@@ -757,7 +757,7 @@ export function PortfolioManager() {
                     .sort((a, b) => a.ganhoPerda - b.ganhoPerda)
                     .slice(0, 5)
                     .map((fund) => (
-                      <div key={fund.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                      <div key={fund.id} className="flex items-center justify-between p-2 bg-destructive/10 rounded-lg">
                         <span className="font-medium text-xs">{fund.name.substring(0, 12)}...</span>
                         <span className="font-bold text-red-600 text-xs">
                           {formatCurrency(fund.ganhoPerda)}

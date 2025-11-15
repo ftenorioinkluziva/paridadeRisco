@@ -33,9 +33,9 @@ export function AllocationProgressBar({ totalAllocated, assetCount }: Allocation
   };
 
   const getProgressColor = () => {
-    if (isComplete) return "bg-green-500";
-    if (isOverAllocated) return "bg-red-500";
-    if (isUnderAllocated) return "bg-yellow-500";
+    if (isComplete) return "bg-success/100";
+    if (isOverAllocated) return "bg-destructive/100";
+    if (isUnderAllocated) return "bg-warning/100";
     return "bg-primary";
   };
 
@@ -67,7 +67,7 @@ export function AllocationProgressBar({ totalAllocated, assetCount }: Allocation
         {isOverAllocated && (
           <Progress
             value={totalAllocated - 100}
-            className="h-1 bg-red-100"
+            className="h-1 bg-destructive/20"
           />
         )}
       </div>

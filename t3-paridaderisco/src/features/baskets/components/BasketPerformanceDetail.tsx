@@ -173,12 +173,12 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
 
               {/* Sharpe Ratio */}
               <div className={`p-4 border rounded-lg ${
-                performance.sharpeRatio > 1 ? 'bg-green-50' :
-                performance.sharpeRatio > 0 ? 'bg-yellow-50' : 'bg-red-50'
+                performance.sharpeRatio > 1 ? 'bg-success/10' :
+                performance.sharpeRatio > 0 ? 'bg-warning/10' : 'bg-destructive/10'
               }`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-sm font-medium ${
-                    performance.sharpeRatio > 1 ? 'text-green-700' :
+                    performance.sharpeRatio > 1 ? 'text-success' :
                     performance.sharpeRatio > 0 ? 'text-yellow-700' : 'text-red-700'
                   }`}>
                     Índice Sharpe
@@ -252,7 +252,7 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
 
       {/* Warning if insufficient data */}
       {!performance.temDadosSuficientes && (
-        <Card className="border-yellow-500 bg-yellow-50">
+        <Card className="border-yellow-500 bg-warning/10">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />

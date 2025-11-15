@@ -39,7 +39,7 @@ export const EmptyStateCard: React.FC<EmptyStateCardProps> = ({
         {/* Icon with subtle animation */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full blur-xl opacity-60 animate-pulse" />
-          <div className="relative h-16 w-16 flex items-center justify-center text-blue-500 bg-blue-50 rounded-full border border-blue-100">
+          <div className="relative h-16 w-16 flex items-center justify-center text-blue-500 bg-primary/10 rounded-full border border-blue-100">
             <div className="h-8 w-8">
               {icon}
             </div>
