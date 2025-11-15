@@ -164,7 +164,7 @@ export function TransactionManager() {
             <div className="flex items-center space-x-4">
               <DollarSign className="h-8 w-8 text-primary" />
               <div>
-                <h3 className="font-semibold text-blue-900">Saldo Disponível</h3>
+                <h3 className="font-semibold text-primary">Saldo Disponível</h3>
                 <p className="text-2xl font-bold text-primary">
                   {formatCurrency(currentCashBalance)}
                 </p>

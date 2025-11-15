@@ -221,7 +221,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
               />
               <CommandEmpty>
                 <div className="py-6 text-center">
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     Nenhum ativo encontrado
                   </div>
                   {(activeTypeFilters.length > 0 || searchQuery) && (
@@ -268,27 +268,27 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                           />
                           
                           <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium">
                               {asset.ticker}
                             </span>
-                            <span className="text-xs text-gray-600 truncate max-w-[280px]">
+                            <span className="text-xs text-muted-foreground truncate max-w-[280px]">
                               {asset.name}
                             </span>
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge 
+                          <Badge
                             variant="secondary"
                             className={cn(
                               "text-xs whitespace-nowrap",
-                              AssetTypeColors[asset.type] || "bg-gray-100 text-gray-800"
+                              AssetTypeColors[asset.type] || "bg-muted text-muted-foreground"
                             )}
                           >
                             {AssetTypeLabels[asset.type] || asset.type}
                           </Badge>
                           
-                          <span className="text-xs text-gray-600 whitespace-nowrap">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
                             {asset.dataPoints} pts
                           </span>
                         </div>

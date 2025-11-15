@@ -317,7 +317,7 @@ export default function ChartsPage() {
                         className={
                           currentAssetStats.totalChangePercent >= 0 
                             ? "text-green-700 bg-green-50 border-green-200" 
-                            : "text-red-700 bg-red-50 border-red-200"
+                            : "text-destructive bg-red-50 border-red-200"
                         }
                       >
                         {formatPercentageChange(currentAssetStats.totalChangePercent)}

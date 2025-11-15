@@ -69,11 +69,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-foreground">
             <span className="text-primary">Paridade</span>
-            <span className="text-gray-900">Risco</span>
+            <span className="text-foreground">Risco</span>
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-muted-foreground">
             Entre na sua conta para gerenciar seu portfólio
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-center">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Não tem uma conta?{" "}
                   <Link href="/register" className="text-primary hover:underline">
                     Cadastre-se

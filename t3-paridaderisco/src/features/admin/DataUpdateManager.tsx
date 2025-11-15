@@ -178,7 +178,7 @@ export function DataUpdateManager() {
       {lastUpdateStatus === "error" && (
         <Card className="border-red-200 bg-destructive/10">
           <CardHeader>
-            <CardTitle className="flex items-center text-red-700">
+            <CardTitle className="flex items-center text-destructive">
               <AlertTriangle className="mr-2 h-5 w-5" />
               Erro na Atualização
             </CardTitle>

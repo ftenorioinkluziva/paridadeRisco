@@ -179,7 +179,7 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
                 <div className="flex items-center justify-between mb-2">
                   <span className={`text-sm font-medium ${
                     performance.sharpeRatio > 1 ? 'text-success' :
-                    performance.sharpeRatio > 0 ? 'text-yellow-700' : 'text-red-700'
+                    performance.sharpeRatio > 0 ? 'text-warning' : 'text-destructive'
                   }`}>
                     Índice Sharpe
                   </span>
@@ -257,8 +257,8 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
               <div>
-                <h4 className="font-semibold text-yellow-900">Dados Parciais</h4>
-                <p className="text-sm text-yellow-800">
+                <h4 className="font-semibold text-warning">Dados Parciais</h4>
+                <p className="text-sm text-warning">
                   Alguns ativos não possuem dados históricos completos para o período selecionado.
                   Os cálculos foram feitos com os dados disponíveis.
                 </p>

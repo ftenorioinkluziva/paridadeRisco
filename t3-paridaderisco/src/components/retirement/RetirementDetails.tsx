@@ -149,8 +149,8 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Com aporte atual */}
           <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-            <h3 className="text-sm font-medium text-blue-700 mb-2">Com aporte atual:</h3>
-            <p className="text-lg font-bold text-gray-900">
+            <h3 className="text-sm font-medium text-primary mb-2">Com aporte atual:</h3>
+            <p className="text-lg font-bold text-foreground">
               Total de {formatCurrencyCompact(totalRetirado)}
             </p>
             <div className="mt-2 space-y-1">
@@ -161,12 +161,12 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
                 Durante {anosSustentaveis} anos (dos {simulationResult.inputData.periodoUsufruir} planejados)
               </p>
               <div className="flex items-center justify-between text-xs pt-1 border-t border-primary/30">
-                <span className="text-blue-700">Salário mensal atual:</span>
-                <span className="font-semibold text-blue-900">{formatCurrency(valorMensalDesejado)}</span>
+                <span className="text-primary">Salário mensal atual:</span>
+                <span className="font-semibold text-primary">{formatCurrency(valorMensalDesejado)}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-blue-700">Quando se aposentar:</span>
-                <span className="font-semibold text-blue-900">{formatCurrency(rendaInicial)}</span>
+                <span className="text-primary">Quando se aposentar:</span>
+                <span className="font-semibold text-primary">{formatCurrency(rendaInicial)}</span>
               </div>
             </div>
           </div>
@@ -181,14 +181,14 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
           }`}>
             <h3 className={`text-sm font-medium mb-2 ${
               tipoMensagem === "superavit"
-                ? 'text-green-700'
+                ? 'text-success'
                 : tipoMensagem === "deficit"
-                ? 'text-red-700'
-                : 'text-yellow-700'
+                ? 'text-destructive'
+                : 'text-warning'
             }`}>
               {tipoMensagem === "superavit" ? "Superávit" : tipoMensagem === "deficit" ? "Déficit" : "Resultado"}:
             </h3>
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-lg font-bold text-foreground">
               {mensagemAporte}
             </p>
             {tipoMensagem === "deficit" && (
@@ -218,41 +218,41 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Fase de Acumulação */}
             <div className="p-4 rounded-lg bg-success/10 border-2 border-success">
-              <h4 className="text-sm font-bold text-green-700 mb-3">Fase de Acumulação</h4>
+              <h4 className="text-sm font-bold text-success mb-3">Fase de Acumulação</h4>
               <div className="space-y-2 text-sm">
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-foreground">
                   {simulationResult.inputData.idadeAtual} aos {simulationResult.inputData.idadeAposentadoria} anos
                 </p>
                 <div>
                   <p className="text-muted-foreground">Crescimento:</p>
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-foreground">
                     {formatCurrencyCompact(simulationResult.inputData.patrimonioInicial)} → {formatCurrencyCompact(patrimonioTransicao)}
                   </p>
                 </div>
                 <p className="text-muted-foreground">
-                  Período: <span className="font-medium text-gray-900">{simulationResult.anosAcumulacao} anos</span>
+                  Período: <span className="font-medium text-foreground">{simulationResult.anosAcumulacao} anos</span>
                 </p>
                 <p className="text-muted-foreground">
-                  Aportes mensais: <span className="font-medium text-gray-900">{formatCurrency(simulationResult.inputData.aporteMensal)}</span>
+                  Aportes mensais: <span className="font-medium text-foreground">{formatCurrency(simulationResult.inputData.aporteMensal)}</span>
                 </p>
               </div>
             </div>
 
             {/* Transição */}
             <div className="p-4 rounded-lg bg-chart-1/10 border-2 border-chart-1">
-              <h4 className="text-sm font-bold text-orange-700 mb-3">Transição</h4>
+              <h4 className="text-sm font-bold text-chart-1 mb-3">Transição</h4>
               <div className="space-y-2 text-sm">
-                <p className="font-medium text-gray-900">Aos {simulationResult.inputData.idadeAposentadoria} anos</p>
+                <p className="font-medium text-foreground">Aos {simulationResult.inputData.idadeAposentadoria} anos</p>
                 <div>
                   <p className="text-muted-foreground">Patrimônio:</p>
-                  <p className="font-semibold text-gray-900">{formatCurrencyCompact(patrimonioTransicao)}</p>
+                  <p className="font-semibold text-foreground">{formatCurrencyCompact(patrimonioTransicao)}</p>
                 </div>
-                <p className="text-lg font-bold text-yellow-600 mt-2">
+                <p className="text-lg font-bold text-warning mt-2">
                   Meta Atingível!
                 </p>
                 <div>
                   <p className="text-muted-foreground">Renda passiva:</p>
-                  <p className="font-semibold text-gray-900">{formatCurrency(valorMensalLiquido)}</p>
+                  <p className="font-semibold text-foreground">{formatCurrency(valorMensalLiquido)}</p>
                 </div>
               </div>
             </div>
@@ -262,10 +262,10 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
               planoSustentavel ? 'bg-primary/10 border-primary' : 'bg-destructive/10 border-destructive'
             }`}>
               <h4 className={`text-sm font-bold mb-3 ${
-                planoSustentavel ? 'text-blue-700' : 'text-red-700'
+                planoSustentavel ? 'text-primary' : 'text-destructive'
               }`}>Fase de Aposentadoria</h4>
               <div className="space-y-2 text-sm">
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-foreground">
                   {planoSustentavel
                     ? `${simulationResult.inputData.idadeAposentadoria} aos ${idadeFinal} anos`
                     : `${simulationResult.inputData.idadeAposentadoria} aos ${idadeFinalReal} anos`
@@ -276,20 +276,20 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
                 </p>
                 {!planoSustentavel && (
                   <div className="p-2 bg-destructive/20 rounded border border-destructive/40">
-                    <p className="text-xs text-red-800 font-semibold">
+                    <p className="text-xs text-destructive font-semibold">
                       ⚠️ Dinheiro acaba aos {idadeFinalReal} anos
                     </p>
-                    <p className="text-xs text-red-700 mt-1">
+                    <p className="text-xs text-destructive mt-1">
                       Faltam {anosFaltantes} anos para completar o plano de {simulationResult.inputData.periodoUsufruir} anos
                     </p>
                   </div>
                 )}
                 <div>
                   <p className="text-muted-foreground">Patrimônio final:</p>
-                  <p className="font-semibold text-gray-900">{formatCurrencyCompact(evolucaoPatrimonio.patrimonioFinal)}</p>
+                  <p className="font-semibold text-foreground">{formatCurrencyCompact(evolucaoPatrimonio.patrimonioFinal)}</p>
                 </div>
                 {planoSustentavel && evolucaoPatrimonio.patrimonioFinal > 0 && (
-                  <p className="text-xs text-green-700 mt-1">
+                  <p className="text-xs text-success mt-1">
                     ✓ Sobra de {formatCurrencyCompact(evolucaoPatrimonio.patrimonioFinal)} no final
                   </p>
                 )}

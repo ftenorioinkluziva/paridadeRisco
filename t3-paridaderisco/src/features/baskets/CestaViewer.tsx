@@ -261,7 +261,7 @@ export function CestaViewer() {
                         <Button size="sm" variant="ghost">
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700">
+                        <Button size="sm" variant="ghost" className="text-red-600 hover:text-destructive">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -427,7 +427,7 @@ export function CestaViewer() {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-destructive/10"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-destructive hover:bg-destructive/10"
                                   onClick={() => {
                                     removeAssetMutation.mutate({
                                       cestaId: selectedBasket!,

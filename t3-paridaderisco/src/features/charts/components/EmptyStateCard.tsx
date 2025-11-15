@@ -48,10 +48,10 @@ export const EmptyStateCard: React.FC<EmptyStateCardProps> = ({
         
         {/* Content */}
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-foreground">
             {title}
           </h3>
-          <p className="text-sm text-gray-600 max-w-sm leading-relaxed">
+          <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
             {description}
           </p>
         </div>

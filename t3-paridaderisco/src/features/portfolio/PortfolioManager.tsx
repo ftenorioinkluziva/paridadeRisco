@@ -435,7 +435,7 @@ export function PortfolioManager() {
                       Incluir caixa na base de cálculo
                     </label>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1 ml-7">
+                  <p className="text-xs text-muted-foreground mt-1 ml-7">
                     {includeCashInBase 
                       ? 'Percentuais calculados sobre: Posições + Fundos + Caixa'
                       : 'Percentuais calculados sobre: Posições + Fundos (sem caixa)'
@@ -518,7 +518,7 @@ export function PortfolioManager() {
                       </div>
                       {rebalanceData.includeCashInBase && (
                         <div className="flex items-center justify-between mb-2 text-sm">
-                          <span className="text-gray-600">• Valor Investido:</span>
+                          <span className="text-muted-foreground">• Valor Investido:</span>
                           <span className="font-medium">
                             {formatCurrency(rebalanceData.currentInvestedValue || 0)}
                           </span>
@@ -526,7 +526,7 @@ export function PortfolioManager() {
                       )}
                       {rebalanceData.includeCashInBase && (
                         <div className="flex items-center justify-between mb-2 text-sm">
-                          <span className="text-gray-600">• Caixa Disponível:</span>
+                          <span className="text-muted-foreground">• Caixa Disponível:</span>
                           <span className="font-medium">
                             {formatCurrency(rebalanceData.currentCashBalance || 0)}
                           </span>
@@ -576,7 +576,7 @@ export function PortfolioManager() {
                           <div className="p-3 space-y-3">
                             {/* Quantidade */}
                             <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600">{formatNumberByAssetClass(Math.abs(suggestion.shareDifference), suggestion.ativo.type)} ações</span>
+                              <span className="text-sm text-muted-foreground">{formatNumberByAssetClass(Math.abs(suggestion.shareDifference), suggestion.ativo.type)} ações</span>
                               <span className="font-bold text-lg">
                                 {formatCurrency(suggestion.estimatedCost)}
                               </span>
@@ -585,7 +585,7 @@ export function PortfolioManager() {
                             {/* Alocação atual vs target */}
                             <div className="space-y-2">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-gray-600">Atual: {suggestion.currentPercent?.toFixed(1)}%</span>
+                                <span className="text-muted-foreground">Atual: {suggestion.currentPercent?.toFixed(1)}%</span>
                                 <span className="text-gray-400">→</span>
                                 <span className="font-medium text-primary">Target: {suggestion.targetPercentage?.toFixed(1)}%</span>
                               </div>

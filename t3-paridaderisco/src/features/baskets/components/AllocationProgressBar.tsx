@@ -15,7 +15,7 @@ export function AllocationProgressBar({ totalAllocated, assetCount }: Allocation
     if (isComplete) return "text-green-600";
     if (isOverAllocated) return "text-red-600";
     if (isUnderAllocated) return "text-yellow-600";
-    return "text-gray-600";
+    return "text-muted-foreground";
   };
 
   const getStatusIcon = () => {

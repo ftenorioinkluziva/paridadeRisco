@@ -39,7 +39,7 @@ export function PasswordStrength({ password, className }: PasswordStrengthProps)
   return (
     <div className={cn("mt-2", className)}>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-gray-600">Força da senha:</span>
+        <span className="text-muted-foreground">Força da senha:</span>
         <span className={cn(
           "font-medium",
           strength <= 2 ? "text-red-600" : 
@@ -61,7 +61,7 @@ export function PasswordStrength({ password, className }: PasswordStrengthProps)
         ))}
       </div>
       {strength > 0 && strength < 4 && (
-        <div className="mt-2 text-xs text-gray-600">
+        <div className="mt-2 text-xs text-muted-foreground">
           <p>Para uma senha mais forte, inclua:</p>
           <ul className="ml-2 list-disc space-y-1">
             {password.length < 8 && <li>Pelo menos 8 caracteres</li>}
