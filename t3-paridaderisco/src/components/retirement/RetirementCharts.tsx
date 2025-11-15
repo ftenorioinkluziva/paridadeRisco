@@ -163,15 +163,15 @@ export function RetirementCharts({ inputData }: RetirementChartsProps) {
             {/* Legenda de fases */}
             <div className="flex items-center justify-center gap-6 mt-4 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                <div className="w-4 h-4 bg-primary/100 rounded"></div>
                 <span>Acumulação</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                <div className="w-4 h-4 bg-chart-1/100 rounded-full"></div>
                 <span>Início Aposentadoria</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-400 rounded border-2 border-dashed"></div>
+                <div className="w-4 h-4 bg-muted-foreground rounded border-2 border-dashed"></div>
                 <span>Capital Investido</span>
               </div>
             </div>
@@ -247,7 +247,7 @@ export function RetirementCharts({ inputData }: RetirementChartsProps) {
             </ResponsiveContainer>
 
             {/* Explicação */}
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <div className="mt-4 p-3 bg-primary/10 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 <strong>Renda Bruta (Nominal):</strong> Valor corrigido pela inflação ao longo dos anos.
                 <br />

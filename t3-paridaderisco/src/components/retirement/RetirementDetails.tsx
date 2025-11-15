@@ -148,7 +148,7 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
         {/* Cards Aporte Atual vs Resultado */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Com aporte atual */}
-          <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+          <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
             <h3 className="text-sm font-medium text-blue-700 mb-2">Com aporte atual:</h3>
             <p className="text-lg font-bold text-gray-900">
               Total de {formatCurrencyCompact(totalRetirado)}
@@ -160,7 +160,7 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
               <p className="text-xs text-muted-foreground">
                 Durante {anosSustentaveis} anos (dos {simulationResult.inputData.periodoUsufruir} planejados)
               </p>
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-blue-200">
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-primary/30">
                 <span className="text-blue-700">Salário mensal atual:</span>
                 <span className="font-semibold text-blue-900">{formatCurrency(valorMensalDesejado)}</span>
               </div>
@@ -174,10 +174,10 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
           {/* Resultado do Plano */}
           <div className={`p-4 rounded-lg border ${
             tipoMensagem === "superavit"
-              ? 'bg-green-50 border-green-200'
+              ? 'bg-success/10 border-success/30'
               : tipoMensagem === "deficit"
-              ? 'bg-red-50 border-red-200'
-              : 'bg-yellow-50 border-yellow-200'
+              ? 'bg-destructive/10 border-destructive/30'
+              : 'bg-warning/10 border-warning/30'
           }`}>
             <h3 className={`text-sm font-medium mb-2 ${
               tipoMensagem === "superavit"
@@ -217,7 +217,7 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Fase de Acumulação */}
-            <div className="p-4 rounded-lg bg-green-50 border-2 border-green-500">
+            <div className="p-4 rounded-lg bg-success/10 border-2 border-success">
               <h4 className="text-sm font-bold text-green-700 mb-3">Fase de Acumulação</h4>
               <div className="space-y-2 text-sm">
                 <p className="font-medium text-gray-900">
@@ -239,7 +239,7 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
             </div>
 
             {/* Transição */}
-            <div className="p-4 rounded-lg bg-orange-50 border-2 border-orange-500">
+            <div className="p-4 rounded-lg bg-chart-1/10 border-2 border-chart-1">
               <h4 className="text-sm font-bold text-orange-700 mb-3">Transição</h4>
               <div className="space-y-2 text-sm">
                 <p className="font-medium text-gray-900">Aos {simulationResult.inputData.idadeAposentadoria} anos</p>
@@ -259,7 +259,7 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
 
             {/* Fase de Aposentadoria */}
             <div className={`p-4 rounded-lg border-2 ${
-              planoSustentavel ? 'bg-blue-50 border-blue-500' : 'bg-red-50 border-red-500'
+              planoSustentavel ? 'bg-primary/10 border-primary' : 'bg-destructive/10 border-destructive'
             }`}>
               <h4 className={`text-sm font-bold mb-3 ${
                 planoSustentavel ? 'text-blue-700' : 'text-red-700'
@@ -275,7 +275,7 @@ export function RetirementDetails({ simulationResult, evolucaoPatrimonio, onSave
                   {planoSustentavel ? "Sustentável!" : "Insustentável!"}
                 </p>
                 {!planoSustentavel && (
-                  <div className="p-2 bg-red-100 rounded border border-red-300">
+                  <div className="p-2 bg-destructive/20 rounded border border-destructive/40">
                     <p className="text-xs text-red-800 font-semibold">
                       ⚠️ Dinheiro acaba aos {idadeFinalReal} anos
                     </p>

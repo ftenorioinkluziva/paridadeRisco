@@ -555,7 +555,7 @@ export function PortfolioManager() {
                           suggestion.action === 'COMPRA' ? 'border-success/30 bg-success/10/30' : 'border-gray-200 bg-muted/30'
                         }`}>
                           {/* Header com ticker e badge */}
-                          <div className="flex items-center justify-between p-3 border-b bg-white/50">
+                          <div className="flex items-center justify-between p-3 border-b bg-card/50">
                             <div className="flex items-center space-x-3">
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
                                 suggestion.action === 'COMPRA' ? 'bg-success/20 text-success' : 'bg-gray-100 text-foreground'

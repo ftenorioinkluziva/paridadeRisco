@@ -159,9 +159,9 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
           <CardContent>
             <div className="space-y-4">
               {/* Volatility */}
-              <div className="p-4 border rounded-lg bg-orange-50">
+              <div className="p-4 border rounded-lg bg-chart-1/10">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-orange-700">Volatilidade</span>
+                  <span className="text-sm font-medium text-chart-1">Volatilidade</span>
                   <Badge variant="outline" className="bg-white">
                     {formatPercentAbs(performance.volatilidade)}
                   </Badge>
