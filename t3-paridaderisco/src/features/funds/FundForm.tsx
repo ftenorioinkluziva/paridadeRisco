@@ -197,7 +197,7 @@ export function FundForm({ fundId, onSuccess, onCancel }: FundFormProps) {
 
       {/* Prévia da Rentabilidade */}
       {initialValue > 0 && currentValue > 0 && (
-        <div className="p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-muted rounded-lg">
           <div className="text-sm text-gray-600 mb-1">Prévia da Rentabilidade</div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>

@@ -211,14 +211,13 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
             </Button>
           </PopoverTrigger>
           
-          <PopoverContent className="w-[450px] p-0 !bg-white border shadow-lg" align="start" style={{ backgroundColor: '#ffffff' }}>
-            <Command shouldFilter={false} className="!bg-white" style={{ backgroundColor: '#ffffff' }}>
+          <PopoverContent className="w-[450px] p-0 border shadow-lg" align="start">
+            <Command shouldFilter={false}>
               <CommandInput
                 placeholder="Buscar por ticker ou nome..."
                 value={searchQuery}
                 onValueChange={setSearchQuery}
-                className="border-none focus:ring-0 !bg-white !text-gray-900"
-                style={{ backgroundColor: '#ffffff', color: '#111827' }}
+                className="border-none focus:ring-0"
               />
               <CommandEmpty>
                 <div className="py-6 text-center">
@@ -238,7 +237,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                 </div>
               </CommandEmpty>
 
-              <CommandList className="max-h-64 !bg-white" style={{ backgroundColor: '#ffffff' }}>
+              <CommandList className="max-h-64">
                 {Object.entries(filteredAndGroupedAssets).map(([type, typeAssets]) => (
                   <CommandGroup 
                     key={type} 
@@ -256,8 +255,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                         key={asset.id}
                         value={`${asset.ticker} ${asset.name}`}
                         onSelect={() => handleSelect(asset.id)}
-                        style={{ backgroundColor: '#ffffff' }}
-                        className="flex items-center justify-between !bg-white hover:!bg-gray-100 transition-colors p-3 cursor-pointer data-[selected=true]:!bg-gray-100 !text-gray-900"
+                        className="flex items-center justify-between hover:bg-accent transition-colors p-3 cursor-pointer data-[selected=true]:bg-accent"
                       >
                         <div className="flex items-center gap-2">
                           <Check

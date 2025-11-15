@@ -222,7 +222,7 @@ export function TransactionManager() {
                       filteredAssets.map((asset) => (
                         <div
                           key={asset.id}
-                          className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                          className={`p-3 border rounded-lg cursor-pointer hover:bg-muted ${
                             selectedAsset === asset.id ? 'border-primary bg-primary/5' : ''
                           }`}
                           onClick={() => {
@@ -324,7 +324,7 @@ export function TransactionManager() {
 
                   {/* Transaction Summary */}
                   {selectedAsset && watchedShares > 0 && watchedPrice > 0 && (
-                    <div className="p-4 bg-gray-50 rounded-lg space-y-2">
+                    <div className="p-4 bg-muted rounded-lg space-y-2">
                       <h4 className="font-medium">Resumo da Transação</h4>
                       <div className="text-sm space-y-1">
                         <div className="flex justify-between">
@@ -738,7 +738,7 @@ export function TransactionManager() {
                 />
               </div>
 
-              <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="p-3 bg-muted rounded-lg">
                 <div className="flex justify-between text-sm">
                   <span>Saldo Atual:</span>
                   <span className="font-medium">{formatCurrency(currentCashBalance)}</span>

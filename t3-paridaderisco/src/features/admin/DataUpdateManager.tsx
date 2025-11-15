@@ -321,7 +321,7 @@ export function DataUpdateManager() {
             </div>
             
             {schedulerStatusQuery.data?.nextRuns && schedulerStatusQuery.data.nextRuns.length > 0 && (
-              <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="p-3 bg-muted rounded-lg">
                 <div className="font-medium text-sm mb-2">Próximas Execuções:</div>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   {schedulerStatusQuery.data.nextRuns.map((run, index) => (

@@ -7,7 +7,18 @@
       "Read(//c/**)",
       "Bash(npm run build)",
       "Bash(npm run dev:*)",
-      "Bash(npx prisma migrate dev:*)"
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(copy \"C:\\projetos\\monky\\public\\fonts\\Rebels-Fett.woff2\" \"C:\\projetos\\paridadeRisco\\t3-paridaderisco\\public\\fonts\\Rebels-Fett.woff2\")",
+      "Bash(xargs sed:*)",
+      "Bash(for icon in atom cute-robot email monkey dots-vertical wallet piggy-bank basket layout lock)",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

@@ -319,15 +319,15 @@ export function PortfolioManager() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <span className="font-medium">Custo Total Investido</span>
                     <span className="font-bold">{formatCurrency(totalCost)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <span className="font-medium">Valor Atual das Posições</span>
                     <span className="font-bold">{formatCurrency(positionsValue)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                     <span className="font-medium">Valor dos Fundos</span>
                     <span className="font-bold">{formatCurrency(fundsValue)}</span>
                   </div>
@@ -422,7 +422,7 @@ export function PortfolioManager() {
               </CardHeader>
               <CardContent>
                 {/* Cash Inclusion Toggle */}
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mb-4 p-3 bg-muted rounded-lg">
                   <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
@@ -461,7 +461,7 @@ export function PortfolioManager() {
                       {cestasQuery.data?.map((cesta) => (
                         <div 
                           key={cesta.id}
-                          className={`p-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                          className={`p-3 border rounded-lg cursor-pointer hover:bg-muted ${
                             selectedBasketId === cesta.id ? 'border-primary bg-primary/5' : ''
                           }`}
                           onClick={() => {
@@ -552,13 +552,13 @@ export function PortfolioManager() {
                       <h4 className="font-semibold">Transações Recomendadas:</h4>
                       {rebalanceData.suggestions.map((suggestion: any, index: number) => (
                         <div key={index} className={`border rounded-lg overflow-hidden ${
-                          suggestion.action === 'COMPRA' ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-gray-50/30'
+                          suggestion.action === 'COMPRA' ? 'border-green-200 bg-green-50/30' : 'border-gray-200 bg-muted/30'
                         }`}>
                           {/* Header com ticker e badge */}
                           <div className="flex items-center justify-between p-3 border-b bg-white/50">
                             <div className="flex items-center space-x-3">
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                                suggestion.action === 'COMPRA' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                suggestion.action === 'COMPRA' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-foreground'
                               }`}>
                                 {suggestion.ativo.ticker.substring(0, 3)}
                               </div>

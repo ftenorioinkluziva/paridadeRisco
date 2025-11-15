@@ -30,7 +30,7 @@ export const ChartSkeleton: React.FC<ChartSkeletonProps> = ({
       
       {/* Chart area skeleton */}
       <div 
-        className="relative bg-gray-50 rounded-lg animate-pulse"
+        className="relative bg-muted rounded-lg animate-pulse"
         style={{ height }}
       >
         {/* Y-axis skeleton */}
