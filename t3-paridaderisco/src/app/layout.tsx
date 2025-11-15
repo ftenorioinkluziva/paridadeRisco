@@ -5,8 +5,10 @@ import { Roboto_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import type { Metadata } from "next";
 import { Providers } from "~/components/providers";
-import { Header } from "~/components/layout/Header";
 import { Toaster } from "~/components/ui/toaster";
+import { SidebarProvider } from "~/components/ui/sidebar";
+import { DashboardSidebar } from "~/components/dashboard/sidebar";
+import { V0Provider } from "~/lib/v0-context";
 
 const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
@@ -30,6 +32,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const isV0 = process.env.VERCEL_URL?.includes("vusercontent.net") ?? false;
+
   return (
     <html lang="pt-BR" className={`${GeistSans.variable} dark`}>
       <head>
@@ -41,15 +45,28 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className={`${rebelGrotesk.variable} ${robotoMono.variable} min-h-screen bg-background font-sans antialiased`}>
+      <body className={`${rebelGrotesk.variable} ${robotoMono.variable} antialiased`}>
         <Providers>
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <div className="flex-1">
-              {children}
-            </div>
-          </div>
-          <Toaster />
+          <V0Provider isV0={isV0}>
+            <SidebarProvider>
+              {/* Desktop Layout with Sidebar */}
+              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-gap lg:px-sides">
+                {/* Sidebar - 2 colunas no desktop */}
+                <div className="hidden lg:block col-span-2 top-0 relative">
+                  <DashboardSidebar />
+                </div>
+
+                {/* Conteúdo Principal - 10 colunas no desktop */}
+                <div className="col-span-1 lg:col-span-10">
+                  <div className="py-sides min-h-screen">
+                    {children}
+                  </div>
+                </div>
+              </div>
+
+              <Toaster />
+            </SidebarProvider>
+          </V0Provider>
         </Providers>
       </body>
     </html>
