@@ -21,6 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import AtomIcon from "~/components/icons/atom";
 import BracketsIcon from "~/components/icons/brackets";
@@ -39,6 +40,8 @@ import { Bullet } from "~/components/ui/bullet";
 import LockIcon from "~/components/icons/lock";
 import Image from "next/image";
 import { useIsV0 } from "~/lib/v0-context";
+import { api } from "~/lib/api";
+import { useRouter } from "next/navigation";
 
 // This is sample data for the sidebar
 const data = {
@@ -48,45 +51,45 @@ const data = {
       items: [
         {
           title: "Overview",
-          url: "/",
+          url: "/overview",
           icon: BracketsIcon,
           isActive: true,
+          locked: false,
         },
         {
           title: "Portfolio",
           url: "/portfolio",
           icon: LayoutIcon,
           isActive: false,
+          locked: false,
         },
         {
           title: "Charts",
           url: "/charts",
           icon: ChartIcon,
           isActive: false,
+          locked: false,
         },
         {
           title: "Baskets",
           url: "/baskets",
           icon: BasketIcon,
           isActive: false,
-        },
-        {
-          title: "Funds",
-          url: "/funds",
-          icon: WalletIcon,
-          isActive: false,
+          locked: false,
         },
         {
           title: "Retirement",
           url: "/retirement",
           icon: PiggyBankIcon,
           isActive: false,
+          locked: false,
         },
         {
           title: "Admin",
           url: "/admin",
           icon: GearIcon,
           isActive: false,
+          locked: false,
         },
       ],
     },
@@ -95,11 +98,16 @@ const data = {
     title: "Sistema (Online)",
     status: "online",
   },
-  user: {
-    name: "Usuário",
-    email: "user@paridaderisco.com",
-    avatar: "/avatars/default.png",
-  },
+};
+
+// Helper function to get user initials
+const getUserInitials = (name?: string) => {
+  if (!name) return "U";
+  const nameParts = name.split(" ");
+  if (nameParts.length >= 2) {
+    return `${nameParts[0]![0]}${nameParts[1]![0]}`.toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
 };
 
 export function DashboardSidebar({
@@ -107,6 +115,39 @@ export function DashboardSidebar({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
   const isV0 = useIsV0();
+  const router = useRouter();
+
+  // Fetch real user data
+  const { data: user } = api.user.getUserProfile.useQuery();
+
+  // Logout mutation
+  const logoutMutation = api.auth.logout.useMutation({
+    onSuccess: () => {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = "/";
+    },
+    onError: (error) => {
+      console.error("Logout error:", error);
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user");
+      document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = "/";
+    }
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
+  const handleProfileClick = () => {
+    router.push("/perfil");
+  };
+
+  const handleSettingsClick = () => {
+    router.push("/admin");
+  };
 
   return (
     <Sidebar {...props} className={cn("py-sides", className)}>
@@ -187,20 +228,24 @@ export function DashboardSidebar({
                 <Popover>
                   <PopoverTrigger className="flex gap-0.5 w-full group cursor-pointer">
                     <div className="shrink-0 flex size-14 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground overflow-clip">
-                      <Image
-                        src={data.user.avatar}
-                        alt={data.user.name}
-                        width={120}
-                        height={120}
-                      />
+                      <Avatar className="h-14 w-14 rounded-lg">
+                        <AvatarImage
+                          src={user?.image ?? undefined}
+                          alt={user?.name ?? "User"}
+                          className="rounded-lg object-cover"
+                        />
+                        <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-bold text-lg rounded-lg">
+                          {getUserInitials(user?.name)}
+                        </AvatarFallback>
+                      </Avatar>
                     </div>
                     <div className="group/item pl-3 pr-1.5 pt-2 pb-1.5 flex-1 flex bg-sidebar-accent hover:bg-sidebar-accent-active/75 items-center rounded group-data-[state=open]:bg-sidebar-accent-active group-data-[state=open]:hover:bg-sidebar-accent-active group-data-[state=open]:text-sidebar-accent-foreground">
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate text-xl font-display">
-                          {data.user.name}
+                          {user?.name ?? "Usuário"}
                         </span>
                         <span className="truncate text-xs uppercase opacity-50 group-hover/item:opacity-100">
-                          {data.user.email}
+                          {user?.email ?? "user@paridaderisco.com"}
                         </span>
                       </div>
                       <DotsVerticalIcon className="ml-auto size-4" />
@@ -213,13 +258,27 @@ export function DashboardSidebar({
                     sideOffset={4}
                   >
                     <div className="flex flex-col">
-                      <button className="flex items-center px-4 py-2 text-sm hover:bg-accent">
+                      <button
+                        onClick={handleProfileClick}
+                        className="flex items-center px-4 py-2 text-sm hover:bg-accent"
+                      >
                         <MonkeyIcon className="mr-2 h-4 w-4" />
-                        Account
+                        Meu Perfil
                       </button>
-                      <button className="flex items-center px-4 py-2 text-sm hover:bg-accent">
+                      <button
+                        onClick={handleSettingsClick}
+                        className="flex items-center px-4 py-2 text-sm hover:bg-accent"
+                      >
                         <GearIcon className="mr-2 h-4 w-4" />
-                        Settings
+                        Configurações
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        disabled={logoutMutation.isPending}
+                        className="flex items-center px-4 py-2 text-sm hover:bg-accent text-destructive disabled:opacity-50"
+                      >
+                        <MonkeyIcon className="mr-2 h-4 w-4" />
+                        {logoutMutation.isPending ? "Saindo..." : "Sair"}
                       </button>
                     </div>
                   </PopoverContent>

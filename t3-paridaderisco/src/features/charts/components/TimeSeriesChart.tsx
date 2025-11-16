@@ -29,13 +29,10 @@ interface TimeSeriesChartProps {
 interface CustomTooltipProps {
   active?: boolean;
   payload?: ReadonlyArray<{
-    value: number;
-    payload: {
-      date: string;
-      value: number;
-      rawPrice?: number;
-      percentageChange?: number;
-    };
+    value?: any;
+    payload?: any;
+    dataKey?: string | number;
+    color?: string;
   }>;
   label?: string | number;
   isNormalized?: boolean;

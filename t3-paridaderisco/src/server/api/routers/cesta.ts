@@ -44,6 +44,21 @@ export const cestaRouter = createTRPCRouter({
     });
   }),
 
+  // Simplified list for basket selection in user profile
+  listForSelection: protectedProcedure.query(async ({ ctx }) => {
+    // For now, return all baskets from all users
+    // In the future, only ADMIN users can create baskets, and regular users can select from all available baskets
+    return await ctx.prisma.cesta.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+  }),
+
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

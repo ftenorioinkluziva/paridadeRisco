@@ -425,4 +425,193 @@ export const portfolioRouter = createTRPCRouter({
         success: true,
       };
     }),
+
+  // Get portfolio metrics including risk balance score
+  getMetrics: protectedProcedure.query(async ({ ctx }) => {
+    const { userId } = ctx.session;
+
+    // Get user's selected basket
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+      select: { selectedBasketId: true },
+    });
+
+    // Get portfolio data
+    const portfolio = await ctx.prisma.portfolio.findUnique({
+      where: { userId },
+    });
+
+    if (!portfolio) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Portfolio not found",
+      });
+    }
+
+    // Get transactions to calculate positions
+    const transactions = await ctx.prisma.transacao.findMany({
+      where: { userId },
+      include: {
+        ativo: {
+          include: {
+            dadosHistoricos: {
+              orderBy: { date: "desc" },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    // Calculate positions
+    const positionsMap = new Map<string, { shares: number; currentPrice: number; currentValue: number; totalCost: number; ativoId: string }>();
+
+    for (const transaction of transactions) {
+      const key = transaction.ativoId;
+      const existing = positionsMap.get(key);
+      const shares = Number(transaction.shares);
+      const pricePerShare = Number(transaction.pricePerShare);
+      const currentPrice = Number(transaction.ativo.dadosHistoricos[0]?.price || 0);
+
+      if (!existing) {
+        const totalShares = transaction.type === TransactionType.COMPRA ? shares : -shares;
+        if (totalShares > 0) {
+          positionsMap.set(key, {
+            shares: totalShares,
+            currentPrice,
+            currentValue: totalShares * currentPrice,
+            totalCost: totalShares * pricePerShare,
+            ativoId: transaction.ativoId,
+          });
+        }
+      } else {
+        const newShares = transaction.type === TransactionType.COMPRA
+          ? existing.shares + shares
+          : existing.shares - shares;
+
+        if (newShares > 0) {
+          const newTotalCost = transaction.type === TransactionType.COMPRA
+            ? existing.totalCost + (shares * pricePerShare)
+            : existing.totalCost - (shares * (existing.totalCost / existing.shares));
+
+          positionsMap.set(key, {
+            shares: newShares,
+            currentPrice,
+            currentValue: newShares * currentPrice,
+            totalCost: newTotalCost,
+            ativoId: transaction.ativoId,
+          });
+        } else {
+          positionsMap.delete(key);
+        }
+      }
+    }
+
+    const positions = Array.from(positionsMap.values());
+
+    // Calculate total value
+    const positionsValue = positions.reduce((sum, pos) => sum + pos.currentValue, 0);
+    const totalCost = positions.reduce((sum, pos) => sum + pos.totalCost, 0);
+    const cashBalance = Number(portfolio.cashBalance);
+
+    // Get fund stats
+    const fundStats = await ctx.prisma.fundoInvestimento.aggregate({
+      where: { userId },
+      _sum: {
+        currentValue: true,
+        initialInvestment: true,
+      },
+    });
+
+    const fundsValue = Number(fundStats._sum.currentValue || 0);
+    const fundsInitialInvestment = Number(fundStats._sum.initialInvestment || 0);
+
+    const totalValue = positionsValue + fundsValue + cashBalance;
+    const totalInvested = totalCost + fundsInitialInvestment;
+    const totalGain = (positionsValue - totalCost) + (fundsValue - fundsInitialInvestment);
+    const totalGainPercent = totalInvested > 0 ? (totalGain / totalInvested) * 100 : 0;
+
+    // Calculate Risk Balance Score
+    let riskBalanceScore = 100; // Default 100% if no basket selected
+
+    if (user?.selectedBasketId) {
+      const basket = await ctx.prisma.cesta.findUnique({
+        where: { id: user.selectedBasketId },
+        include: {
+          ativos: {
+            include: {
+              ativo: true,
+            },
+          },
+        },
+      });
+
+      if (basket && basket.ativos.length > 0) {
+        // Calculate current allocation percentages
+        const allocationBase = positionsValue + fundsValue;
+
+        if (allocationBase > 0) {
+          let totalWeightedScore = 0;
+          let totalWeight = 0;
+
+          for (const allocation of basket.ativos) {
+            const targetPercent = Number(allocation.targetPercentage);
+            const position = positions.find(p => p.ativoId === allocation.ativoId);
+            const currentValue = position?.currentValue || 0;
+            const currentPercent = (currentValue / allocationBase) * 100;
+
+            // Calculate ratio: current / target (in percentage terms)
+            const ratio = targetPercent > 0 ? (currentPercent / targetPercent) * 100 : 0;
+
+            // Calculate balance score for this asset (0-100)
+            let assetScore = 0;
+
+            if (ratio >= 90 && ratio <= 110) {
+              // Perfect balance zone (90%-110% of target)
+              assetScore = 100;
+            } else if (ratio < 90) {
+              // Under-allocated: linear penalty from 90% down to 0%
+              // At 90% = 100 points, at 0% = 0 points
+              assetScore = Math.max(0, (ratio / 90) * 100);
+            } else {
+              // Over-allocated: linear penalty from 110% up
+              // At 110% = 100 points, at 200% = 0 points, beyond 200% = 0 points
+              const overAllocPenalty = Math.min(100, ((ratio - 110) / 90) * 100);
+              assetScore = Math.max(0, 100 - overAllocPenalty);
+            }
+
+            // Weight: larger targets have exponentially more impact
+            // Target >= 10%: weight = target^1.5 (high priority)
+            // Target 5-10%: weight = target^1.2 (medium priority)
+            // Target < 5%: weight = target (normal priority)
+            let weight;
+            if (targetPercent >= 10) {
+              weight = Math.pow(targetPercent, 1.5);
+            } else if (targetPercent >= 5) {
+              weight = Math.pow(targetPercent, 1.2);
+            } else {
+              weight = targetPercent;
+            }
+
+            totalWeightedScore += assetScore * weight;
+            totalWeight += weight;
+          }
+
+          // Calculate final weighted average score
+          riskBalanceScore = totalWeight > 0 ? totalWeightedScore / totalWeight : 100;
+        }
+      }
+    }
+
+    return {
+      totalValue,
+      totalGain,
+      totalGainPercent,
+      riskBalanceScore: Math.round(riskBalanceScore),
+      cashBalance,
+      positionsValue,
+      fundsValue,
+    };
+  }),
 });

@@ -27,10 +27,10 @@ interface ComparisonChartProps {
 interface CustomTooltipProps {
   active?: boolean;
   payload?: ReadonlyArray<{
-    value: number;
-    dataKey: string;
-    color: string;
-    payload: any;
+    value?: any;
+    dataKey?: string | number;
+    color?: string;
+    payload?: any;
   }>;
   label?: string | number;
 }
@@ -79,7 +79,7 @@ const CustomTooltip: React.FC<ExtendedCustomTooltipProps> = ({
 
         <div className="space-y-1">
           {[...payload]
-            .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)) // Ordenar por valor absoluto decrescente
+            .sort((a, b) => Math.abs(b.value ?? 0) - Math.abs(a.value ?? 0)) // Ordenar por valor absoluto decrescente
             .map((entry, index) => {
               // Determinar se é um índice percentual ou retorno de preço
               const ticker = entry.dataKey as string;
@@ -98,10 +98,10 @@ const CustomTooltip: React.FC<ExtendedCustomTooltipProps> = ({
                   </div>
                   <span
                     className={`text-sm font-medium ${
-                      entry.value >= 0 ? 'text-green-600' : 'text-red-600'
+                      (entry.value ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}
                   >
-                    {formatPercentageChange(entry.value)}
+                    {formatPercentageChange(entry.value ?? 0)}
                   </span>
                 </div>
               );

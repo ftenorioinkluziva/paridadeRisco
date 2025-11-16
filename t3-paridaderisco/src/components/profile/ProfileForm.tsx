@@ -4,8 +4,16 @@ import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { api } from "~/lib/api";
-import { Loader2, Edit, X, Check } from "lucide-react";
+import { Loader2, Edit, X, Check, Upload, Camera } from "lucide-react";
 import { useToast } from "~/hooks/use-toast";
 import { calcularIdade, formatDateForInput } from "~/lib/utils/date";
 
@@ -19,12 +27,19 @@ export function ProfileForm() {
     email: "",
     phone: "",
     dataNascimento: "",
+    image: "",
+    selectedBasketId: "",
     currentPassword: "",
     newPassword: "",
   });
 
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   // Fetch user profile
   const { data: user, isLoading, refetch } = api.user.getUserProfile.useQuery();
+
+  // Fetch available baskets for selection
+  const { data: baskets, isLoading: loadingBaskets } = api.cesta.listForSelection.useQuery();
 
   // Update mutation
   const updateMutation = api.user.updateUserProfile.useMutation({
@@ -59,9 +74,12 @@ export function ProfileForm() {
         email: user.email,
         phone: user.phone,
         dataNascimento: user.dataNascimento ? formatDateForInput(user.dataNascimento) : "",
+        image: user.image ?? "",
+        selectedBasketId: user.selectedBasketId ?? "",
         currentPassword: "",
         newPassword: "",
       });
+      setImagePreview(user.image ?? null);
     }
   }, [user]);
 
@@ -80,6 +98,8 @@ export function ProfileForm() {
       email: formData.email,
       phone: formData.phone,
       dataNascimento: formData.dataNascimento || null,
+      image: formData.image || null,
+      selectedBasketId: formData.selectedBasketId || null,
     };
 
     if (showPasswordFields && formData.newPassword) {
@@ -98,12 +118,63 @@ export function ProfileForm() {
         email: user.email,
         phone: user.phone,
         dataNascimento: user.dataNascimento ? formatDateForInput(user.dataNascimento) : "",
+        image: user.image ?? "",
+        selectedBasketId: user.selectedBasketId ?? "",
         currentPassword: "",
         newPassword: "",
       });
+      setImagePreview(user.image ?? null);
     }
     setIsEditing(false);
     setShowPasswordFields(false);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Erro",
+          description: "A imagem deve ter no máximo 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Erro",
+          description: "O arquivo deve ser uma imagem.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setFormData({ ...formData, image: base64String });
+        setImagePreview(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, image: "" });
+    setImagePreview(null);
+  };
+
+  const getUserInitials = (name?: string) => {
+    if (!name) return "U";
+    const nameParts = name.split(" ");
+    if (nameParts.length >= 2) {
+      return `${nameParts[0]![0]}${nameParts[1]![0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   if (isLoading) {
@@ -117,6 +188,51 @@ export function ProfileForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
+        {/* Foto de Perfil */}
+        <div className="space-y-2">
+          <Label>Foto de Perfil</Label>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-24 w-24 border-2 border-border">
+              <AvatarImage src={imagePreview ?? undefined} alt={formData.name} />
+              <AvatarFallback className="bg-primary text-primary-foreground font-bold text-2xl">
+                {getUserInitials(formData.name)}
+              </AvatarFallback>
+            </Avatar>
+
+            {isEditing && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="imageUpload" className="cursor-pointer">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                    <Camera className="h-4 w-4" />
+                    <span className="text-sm">Escolher Imagem</span>
+                  </div>
+                  <Input
+                    id="imageUpload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </Label>
+                {imagePreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Remover
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG ou GIF. Máx 5MB.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Nome */}
         <div className="space-y-2">
           <Label htmlFor="name">Nome</Label>
@@ -177,6 +293,36 @@ export function ProfileForm() {
           )}
           <p className="text-sm text-muted-foreground">
             Sua idade será calculada automaticamente nas simulações de aposentadoria
+          </p>
+        </div>
+
+        {/* Cesta Selecionada */}
+        <div className="space-y-2">
+          <Label htmlFor="selectedBasket">Cesta de Investimentos</Label>
+          <Select
+            value={formData.selectedBasketId}
+            onValueChange={(value) => setFormData({ ...formData, selectedBasketId: value })}
+            disabled={!isEditing || loadingBaskets}
+          >
+            <SelectTrigger id="selectedBasket">
+              <SelectValue placeholder="Selecione uma cesta" />
+            </SelectTrigger>
+            <SelectContent>
+              {baskets && baskets.length > 0 ? (
+                baskets.map((basket) => (
+                  <SelectItem key={basket.id} value={basket.id}>
+                    {basket.name}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="none" disabled>
+                  Nenhuma cesta disponível
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            Selecione a cesta que será utilizada para seus investimentos
           </p>
         </div>
 

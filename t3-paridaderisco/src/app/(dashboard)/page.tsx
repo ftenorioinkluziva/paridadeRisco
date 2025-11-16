@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Redirect /dashboard to /portfolio (Portfolio is the main dashboard)
+// Redirect /dashboard to /overview
 export default function DashboardPage() {
-  redirect("/portfolio");
+  redirect("/overview");
 }

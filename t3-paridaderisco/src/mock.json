@@ -1,0 +1,49 @@
+{
+  "chartData": {
+    "week": [
+      { "date": "Mon", "spendings": 1200, "sales": 3400, "coffee": 450 },
+      { "date": "Tue", "spendings": 1450, "sales": 3800, "coffee": 520 },
+      { "date": "Wed", "spendings": 980, "sales": 2900, "coffee": 380 },
+      { "date": "Thu", "spendings": 1680, "sales": 4200, "coffee": 610 },
+      { "date": "Fri", "spendings": 2100, "sales": 5100, "coffee": 720 },
+      { "date": "Sat", "spendings": 850, "sales": 2200, "coffee": 290 },
+      { "date": "Sun", "spendings": 620, "sales": 1800, "coffee": 210 }
+    ],
+    "month": [
+      { "date": "Week 1", "spendings": 5200, "sales": 12400, "coffee": 1850 },
+      { "date": "Week 2", "spendings": 6100, "sales": 14800, "coffee": 2200 },
+      { "date": "Week 3", "spendings": 4900, "sales": 11200, "coffee": 1650 },
+      { "date": "Week 4", "spendings": 7200, "sales": 16500, "coffee": 2450 }
+    ],
+    "year": [
+      { "date": "Jan", "spendings": 18200, "sales": 42400, "coffee": 6850 },
+      { "date": "Feb", "spendings": 19100, "sales": 44800, "coffee": 7200 },
+      { "date": "Mar", "spendings": 21400, "sales": 49200, "coffee": 7950 },
+      { "date": "Apr", "spendings": 20900, "sales": 46500, "coffee": 7450 },
+      { "date": "May", "spendings": 22200, "sales": 51400, "coffee": 8100 },
+      { "date": "Jun", "spendings": 21800, "sales": 48900, "coffee": 7750 },
+      { "date": "Jul", "spendings": 23100, "sales": 53200, "coffee": 8450 },
+      { "date": "Aug", "spendings": 22600, "sales": 51800, "coffee": 8200 },
+      { "date": "Sep", "spendings": 20400, "sales": 47100, "coffee": 7350 },
+      { "date": "Oct", "spendings": 21900, "sales": 49800, "coffee": 7800 },
+      { "date": "Nov", "spendings": 23400, "sales": 54100, "coffee": 8550 },
+      { "date": "Dec", "spendings": 24800, "sales": 57300, "coffee": 9100 }
+    ]
+  },
+  "notifications": [
+    {
+      "id": "1",
+      "title": "Nova atualização disponível",
+      "message": "Uma nova versão do sistema está disponível",
+      "timestamp": "2 horas atrás",
+      "read": false
+    },
+    {
+      "id": "2",
+      "title": "Relatório mensal",
+      "message": "Seu relatório mensal está pronto para visualização",
+      "timestamp": "1 dia atrás",
+      "read": true
+    }
+  ]
+}
