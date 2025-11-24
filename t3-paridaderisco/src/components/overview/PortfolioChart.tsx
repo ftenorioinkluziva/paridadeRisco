@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { useState } from "react";
+import { api } from "~/lib/api";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Loader2 } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -12,38 +16,42 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 
-interface ChartDataPoint {
-  date: string;
-  portfolio: number;
-  benchmark: number;
-  target: number;
-}
-
 interface PortfolioChartProps {
-  data: ChartDataPoint[];
   title: string;
 }
 
-type TimeRange = "week" | "month" | "year";
+type TimeRange = "week" | "month" | "year" | "all";
 
-export function PortfolioChart({ data, title }: PortfolioChartProps) {
-  const [timeRange, setTimeRange] = useState<TimeRange>("week");
+export function PortfolioChart({ title }: PortfolioChartProps) {
+  const [timeRange, setTimeRange] = useState<TimeRange>("all");
 
-  // Simulated filter - in real app, would filter actual data
-  const getFilteredData = () => {
-    switch (timeRange) {
-      case "week":
-        return data.slice(-7);
-      case "month":
-        return data.slice(-30);
-      case "year":
-        return data;
-      default:
-        return data;
+  const { data, isLoading, error } = api.portfolio.getPortfolioEvolution.useQuery({
+    period: timeRange,
+  });
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+
+    if (timeRange === "week") {
+      return format(date, "dd/MM", { locale: ptBR });
+    } else if (timeRange === "month") {
+      return format(date, "dd/MM", { locale: ptBR });
+    } else if (timeRange === "year") {
+      return format(date, "MMM/yy", { locale: ptBR });
+    } else {
+      return format(date, "MMM/yy", { locale: ptBR });
     }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   };
 
   return (
@@ -78,74 +86,102 @@ export function PortfolioChart({ data, title }: PortfolioChartProps) {
             >
               ANO
             </Button>
+            <Button
+              variant={timeRange === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTimeRange("all")}
+            >
+              TUDO
+            </Button>
           </div>
         </div>
         <div className="flex gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-blue-500" />
-            <span className="text-xs uppercase">Portfólio</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-green-500" />
-            <span className="text-xs uppercase">Benchmark</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-orange-500" />
-            <span className="text-xs uppercase">Meta</span>
+            <span className="text-xs uppercase">Valor do Portfólio</span>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={getFilteredData()}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis
-              dataKey="date"
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
-              tickLine={false}
-            />
-            <YAxis
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
-              tickLine={false}
-              tickFormatter={(value) => `R$ ${value.toLocaleString()}`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "8px",
-              }}
-              formatter={(value: number) => [
-                `R$ ${value.toLocaleString()}`,
-                "",
-              ]}
-            />
-            <Line
-              type="monotone"
-              dataKey="portfolio"
-              stroke="#3b82f6"
-              strokeWidth={3}
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="benchmark"
-              stroke="#10b981"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="target"
-              stroke="#f97316"
-              strokeWidth={2}
-              strokeDasharray="5 5"
-              dot={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {isLoading ? (
+          <div className="flex h-[300px] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : error ? (
+          <div className="flex h-[300px] items-center justify-center">
+            <div className="text-center">
+              <p className="text-destructive mb-2">Erro ao carregar dados</p>
+              <p className="text-sm text-muted-foreground">{error.message}</p>
+            </div>
+          </div>
+        ) : !data?.data || data.data.length === 0 ? (
+          <div className="flex h-[300px] items-center justify-center">
+            <div className="text-center">
+              <p className="text-muted-foreground">Nenhuma transação encontrada</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Adicione transações para visualizar a evolução do portfólio
+              </p>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data.data}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="hsl(var(--border))"
+                opacity={0.5}
+              />
+              <XAxis
+                dataKey="date"
+                tickFormatter={formatDate}
+                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                stroke="#9ca3af"
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                stroke="#9ca3af"
+                tickLine={false}
+                tickFormatter={(value) => {
+                  if (value >= 1000000) {
+                    return `R$ ${(value / 1000000).toFixed(1)}M`;
+                  } else if (value >= 1000) {
+                    return `R$ ${(value / 1000).toFixed(0)}k`;
+                  }
+                  return `R$ ${value.toFixed(0)}`;
+                }}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0]?.payload;
+                    return (
+                      <div className="rounded-lg border bg-background p-3 shadow-lg">
+                        <p className="text-sm font-medium mb-1">
+                          {format(new Date(data.date), "dd 'de' MMMM 'de' yyyy", {
+                            locale: ptBR,
+                          })}
+                        </p>
+                        <p className="text-lg font-bold text-primary">
+                          {formatCurrency(data.value)}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                dot={false}
+                activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );

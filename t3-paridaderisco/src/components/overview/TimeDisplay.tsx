@@ -11,14 +11,17 @@ interface TimeDisplayProps {
 export function TimeDisplay({ location, temperature }: TimeDisplayProps) {
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const updateDateTime = () => {
       const now = new Date();
       setCurrentTime(
         now.toLocaleTimeString("pt-BR", {
           hour: "2-digit",
           minute: "2-digit",
+          second: "2-digit",
         })
       );
       setCurrentDate(
@@ -37,7 +40,7 @@ export function TimeDisplay({ location, temperature }: TimeDisplayProps) {
     return () => clearInterval(interval);
   }, []);
 
-  if (!currentTime || !currentDate) {
+  if (!mounted || !currentTime || !currentDate) {
     return (
       <Card className="bg-gradient-to-br from-secondary/50 to-secondary/30">
         <CardContent className="pt-6">

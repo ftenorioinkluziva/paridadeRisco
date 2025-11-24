@@ -3,7 +3,7 @@
 import { MetricCard } from "~/components/overview/MetricCard";
 import { PortfolioChart } from "~/components/overview/PortfolioChart";
 import { AssetRanking } from "~/components/overview/AssetRanking";
-import { NotificationPanel } from "~/components/overview/NotificationPanel";
+import { NotificationPanelConnected } from "~/components/overview/NotificationPanelConnected";
 import { Badge } from "~/components/ui/badge";
 import { TrendingUp, DollarSign, Target, AlertTriangle } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -17,18 +17,6 @@ const TimeDisplay = dynamic(
 export default function OverviewPage() {
   // Fetch real portfolio metrics
   const { data: metrics, isLoading: metricsLoading } = api.portfolio.getMetrics.useQuery();
-
-  // Mock data - substituir por dados reais via tRPC
-  const chartData = [
-    { date: "06/07", portfolio: 280000, benchmark: 300000, target: 250000 },
-    { date: "07/07", portfolio: 320000, benchmark: 310000, target: 250000 },
-    { date: "08/07", portfolio: 290000, benchmark: 295000, target: 250000 },
-    { date: "09/07", portfolio: 350000, benchmark: 320000, target: 250000 },
-    { date: "10/07", portfolio: 310000, benchmark: 315000, target: 250000 },
-    { date: "11/07", portfolio: 280000, benchmark: 300000, target: 250000 },
-    { date: "12/07", portfolio: 520000, benchmark: 400000, target: 250000 },
-    { date: "13/07", portfolio: 180000, benchmark: 280000, target: 250000 },
-  ];
 
   const topAssets = [
     {
@@ -61,41 +49,6 @@ export default function OverviewPage() {
     },
   ];
 
-  const notifications = [
-    {
-      id: "1",
-      title: "REBALANCEAMENTO NECESSÁRIO",
-      message:
-        "Seu portfólio está desbalanceado. Recomendamos ajuste na alocação de IVVB11.",
-      timestamp: "Há 2 horas",
-      type: "warning" as const,
-      badge: "AÇÃO NECESSÁRIA",
-    },
-    {
-      id: "2",
-      title: "DIVIDENDOS RECEBIDOS",
-      message: "Você recebeu R$ 2.450,00 em dividendos de BOVA11 e IVVB11.",
-      timestamp: "Ontem",
-      type: "success" as const,
-      badge: "NOVO",
-    },
-    {
-      id: "3",
-      title: "ATUALIZAÇÃO DO SISTEMA",
-      message: "Novos gráficos de análise de risco foram adicionados.",
-      timestamp: "10/07/2024",
-      type: "info" as const,
-    },
-    {
-      id: "4",
-      title: "META ATINGIDA",
-      message:
-        "Parabéns! Seu portfólio atingiu a meta de rentabilidade do trimestre.",
-      timestamp: "08/07/2024",
-      type: "success" as const,
-      badge: "SUCESSO",
-    },
-  ];
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-6">
@@ -154,10 +107,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Portfolio Chart */}
-        <PortfolioChart
-          data={chartData}
-          title="EVOLUÇÃO DO PORTFÓLIO"
-        />
+        <PortfolioChart title="EVOLUÇÃO DO PORTFÓLIO" />
 
         {/* Asset Ranking */}
         <AssetRanking
@@ -170,7 +120,7 @@ export default function OverviewPage() {
       {/* Sidebar */}
       <div className="lg:w-96 space-y-4">
         <TimeDisplay location="SÃO PAULO, BRASIL" temperature="18°C" />
-        <NotificationPanel notifications={notifications} />
+        <NotificationPanelConnected />
       </div>
     </div>
   );

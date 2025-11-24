@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { FundManager } from "~/features/funds/FundManager";
 import { TransactionManager } from "~/features/transactions/TransactionManager";
+import { PortfolioEvolutionChart } from "~/features/portfolio/PortfolioEvolutionChart";
 import { formatNumberByAssetClass } from "~/lib/utils";
 
 export function PortfolioManager() {
@@ -247,6 +248,9 @@ export function PortfolioManager() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          {/* Portfolio Evolution Chart */}
+          <PortfolioEvolutionChart />
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>

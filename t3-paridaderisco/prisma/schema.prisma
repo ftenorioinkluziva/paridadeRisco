@@ -46,6 +46,7 @@ model User {
   transacoes              Transacao[]
   fundosInvestimento      FundoInvestimento[]
   simulacoesAposentadoria SimulacaoAposentadoria[]
+  notifications           Notification[]
 }
 
 model Portfolio {
@@ -165,4 +166,68 @@ model SimulacaoAposentadoria {
 
   @@index([userId])
   @@index([createdAt])
+}
+
+// 3. Modelos para RAG (Retrieval-Augmented Generation)
+
+enum ResourceCategory {
+  STRATEGY           // Estratégias de investimento
+  MARKET_ANALYSIS    // Análises de mercado
+  INVESTMENT_GUIDE   // Guias de investimento
+  RISK_PARITY        // Paridade de Risco específico
+  ASSET_INFO         // Informações sobre ativos
+  ECONOMIC_SCENARIO  // Cenários macroeconômicos
+}
+
+enum NotificationType {
+  INSIGHT       // Insights gerais sobre o portfólio
+  WARNING       // Alertas importantes
+  OPPORTUNITY   // Oportunidades identificadas
+  REBALANCE     // Sugestões de rebalanceamento
+}
+
+enum NotificationPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model Resource {
+  id          String           @id @default(cuid())
+  title       String
+  content     String           @db.Text
+  category    ResourceCategory
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  embeddings  Embedding[]
+
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Embedding {
+  id         String                    @id @default(cuid())
+  resourceId String
+  content    String                    @db.Text
+  embedding  Unsupported("vector(768)")
+  resource   Resource                  @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+}
+
+model Notification {
+  id        String               @id @default(cuid())
+  userId    String
+  title     String
+  message   String               @db.Text
+  type      NotificationType
+  priority  NotificationPriority
+  read      Boolean              @default(false)
+  metadata  Json?                // Dados adicionais (ex: sugestões de trades, gráficos)
+  createdAt DateTime             @default(now())
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([read])
 }

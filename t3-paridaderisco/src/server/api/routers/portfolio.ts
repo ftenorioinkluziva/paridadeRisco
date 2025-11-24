@@ -426,6 +426,183 @@ export const portfolioRouter = createTRPCRouter({
       };
     }),
 
+  // Get portfolio evolution over time
+  getPortfolioEvolution: protectedProcedure
+    .input(
+      z.object({
+        period: z.enum(["week", "month", "year", "all"]).default("all"),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const { userId } = ctx.session;
+
+      // Get all transactions ordered by date
+      const transactions = await ctx.prisma.transacao.findMany({
+        where: { userId },
+        include: {
+          ativo: {
+            include: {
+              dadosHistoricos: true,
+            },
+          },
+        },
+        orderBy: { date: "asc" },
+      });
+
+      if (transactions.length === 0) {
+        return {
+          data: [],
+          currentValue: 0,
+          initialDate: null,
+        };
+      }
+
+      // Get investment funds
+      const fundos = await ctx.prisma.fundoInvestimento.findMany({
+        where: { userId },
+      });
+
+      // Get current portfolio
+      const portfolio = await ctx.prisma.portfolio.findUnique({
+        where: { userId },
+      });
+
+      const currentCash = Number(portfolio?.cashBalance || 0);
+
+      // Determine date range
+      const firstTransactionDate = transactions[0]!.date;
+      const today = new Date();
+
+      let startDate = firstTransactionDate;
+      const period = input?.period || "all";
+
+      if (period === "week") {
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 7);
+      } else if (period === "month") {
+        startDate = new Date(today);
+        startDate.setMonth(today.getMonth() - 1);
+      } else if (period === "year") {
+        startDate = new Date(today);
+        startDate.setFullYear(today.getFullYear() - 1);
+      }
+
+      // Filter transactions based on period
+      const filteredTransactions = transactions.filter(t => t.date >= startDate);
+
+      // Create a map of dates to calculate portfolio value
+      const dateMap = new Map<string, number>();
+
+      // Calculate portfolio value for each day from first transaction to today
+      const currentDate = new Date(startDate);
+      currentDate.setHours(0, 0, 0, 0);
+
+      while (currentDate <= today) {
+        const dateStr = currentDate.toISOString().split('T')[0]!;
+
+        // Calculate portfolio value at this date
+        let portfolioValue = 0;
+
+        // 1. Calculate value of stock positions at this date
+        const positionsAtDate = new Map<string, { shares: number; ativoId: string }>();
+
+        // Process all transactions up to this date
+        for (const transaction of transactions) {
+          if (transaction.date <= currentDate) {
+            const existing = positionsAtDate.get(transaction.ativoId);
+            const shares = Number(transaction.shares);
+
+            if (!existing) {
+              const totalShares = transaction.type === TransactionType.COMPRA ? shares : -shares;
+              if (totalShares > 0) {
+                positionsAtDate.set(transaction.ativoId, {
+                  shares: totalShares,
+                  ativoId: transaction.ativoId,
+                });
+              }
+            } else {
+              const newShares = transaction.type === TransactionType.COMPRA
+                ? existing.shares + shares
+                : existing.shares - shares;
+
+              if (newShares > 0) {
+                positionsAtDate.set(transaction.ativoId, {
+                  shares: newShares,
+                  ativoId: transaction.ativoId,
+                });
+              } else {
+                positionsAtDate.delete(transaction.ativoId);
+              }
+            }
+          }
+        }
+
+        // Get price for each position at this date
+        for (const [ativoId, position] of positionsAtDate.entries()) {
+          const ativo = transactions.find(t => t.ativoId === ativoId)?.ativo;
+          if (ativo) {
+            // Find the closest historical price at or before this date
+            const historicalPrice = ativo.dadosHistoricos
+              .filter(h => h.date <= currentDate)
+              .sort((a, b) => b.date.getTime() - a.date.getTime())[0];
+
+            if (historicalPrice) {
+              const price = Number(historicalPrice.price);
+              portfolioValue += position.shares * price;
+            }
+          }
+        }
+
+        // 2. Add value of investment funds
+        // For simplicity, we'll use a linear interpolation between initial and current value
+        for (const fundo of fundos) {
+          if (fundo.investmentDate <= currentDate) {
+            const daysSinceInvestment = Math.floor((currentDate.getTime() - fundo.investmentDate.getTime()) / (1000 * 60 * 60 * 24));
+            const totalDays = Math.floor((today.getTime() - fundo.investmentDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            if (totalDays > 0) {
+              const progress = daysSinceInvestment / totalDays;
+              const initialValue = Number(fundo.initialInvestment);
+              const currentValue = Number(fundo.currentValue);
+              const estimatedValue = initialValue + (currentValue - initialValue) * progress;
+              portfolioValue += estimatedValue;
+            } else {
+              portfolioValue += Number(fundo.initialInvestment);
+            }
+          }
+        }
+
+        // 3. For now, don't include cash in historical calculations
+        // Cash balance tracking was added later and doesn't have historical data
+        // Only add current cash if we're at today
+        if (dateStr === today.toISOString().split('T')[0]) {
+          portfolioValue += currentCash;
+        }
+
+        dateMap.set(dateStr, portfolioValue);
+
+        // Move to next day
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Convert map to array and sort by date
+      const evolutionData = Array.from(dateMap.entries())
+        .map(([date, value]) => ({
+          date,
+          value, // Keep actual value, even if 0
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      // Get current total value
+      const currentValue = evolutionData[evolutionData.length - 1]?.value || 0;
+
+      return {
+        data: evolutionData,
+        currentValue,
+        initialDate: firstTransactionDate,
+      };
+    }),
+
   // Get portfolio metrics including risk balance score
   getMetrics: protectedProcedure.query(async ({ ctx }) => {
     const { userId } = ctx.session;
