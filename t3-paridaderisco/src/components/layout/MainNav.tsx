@@ -16,15 +16,16 @@ import {
   Calculator,
   MessageSquare,
 } from "lucide-react";
+import { api } from "~/lib/api";
 
 const navigation = [
-  { name: "Portfólio", href: "/portfolio", icon: Briefcase },
-  { name: "Gráficos", href: "/charts", icon: BarChart3 },
-  { name: "Cestas", href: "/baskets", icon: ShoppingCart },
-  { name: "Fundos", href: "/funds", icon: TrendingUp },
-  { name: "Aposentadoria", href: "/retirement", icon: Calculator },
-  { name: "Chat", href: "/chat", icon: MessageSquare },
-  { name: "Admin", href: "/admin", icon: Settings },
+  { name: "Portfólio", href: "/portfolio", icon: Briefcase, requireAdmin: false },
+  { name: "Gráficos", href: "/charts", icon: BarChart3, requireAdmin: false },
+  { name: "Cestas", href: "/baskets", icon: ShoppingCart, requireAdmin: false },
+  { name: "Fundos", href: "/funds", icon: TrendingUp, requireAdmin: false },
+  { name: "Aposentadoria", href: "/retirement", icon: Calculator, requireAdmin: false },
+  { name: "Chat", href: "/chat", icon: MessageSquare, requireAdmin: false },
+  { name: "Admin", href: "/admin", icon: Settings, requireAdmin: true },
 ] as const;
 
 interface MainNavProps {
@@ -33,10 +34,19 @@ interface MainNavProps {
 
 export function MainNav({ className }: MainNavProps) {
   const pathname = usePathname();
+  const { data: user } = api.user.getUserProfile.useQuery();
+
+  // Filter navigation items based on user role
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.requireAdmin) {
+      return user?.role === "ADMIN";
+    }
+    return true;
+  });
 
   return (
     <nav className={cn("flex items-center space-x-4 lg:space-x-6", className)}>
-      {navigation.map((item) => {
+      {visibleNavigation.map((item) => {
         const Icon = item.icon;
         return (
           <Link

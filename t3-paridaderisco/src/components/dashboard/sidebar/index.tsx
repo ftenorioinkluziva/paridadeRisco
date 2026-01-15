@@ -53,36 +53,42 @@ const navItems = [
         url: "/overview",
         icon: BracketsIcon,
         locked: false,
+        requireAdmin: false,
       },
       {
         title: "Portfólio",
         url: "/portfolio",
         icon: LayoutIcon,
         locked: false,
+        requireAdmin: false,
       },
       {
         title: "Gráficos",
         url: "/charts",
         icon: ChartIcon,
         locked: false,
+        requireAdmin: false,
       },
       {
         title: "Cestas",
         url: "/baskets",
         icon: BasketIcon,
         locked: false,
+        requireAdmin: false,
       },
       {
         title: "Aposentadoria",
         url: "/retirement",
         icon: PiggyBankIcon,
         locked: false,
+        requireAdmin: false,
       },
       {
         title: "Admin",
         url: "/admin",
         icon: GearIcon,
         locked: false,
+        requireAdmin: true,
       },
     ],
   },
@@ -151,63 +157,73 @@ export function DashboardSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        {navItems.map((group, i) => (
-          <SidebarGroup
-            className={cn(i === 0 && "rounded-t-none")}
-            key={group.title}
-          >
-            <SidebarGroupLabel>
-              <Bullet className="mr-2" />
-              {group.title}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  // Check if current pathname matches this item's URL
-                  const isActive = pathname === item.url;
+        {navItems.map((group, i) => {
+          // Filter items based on user role
+          const visibleItems = group.items.filter((item) => {
+            if (item.requireAdmin) {
+              return user?.role === "ADMIN";
+            }
+            return true;
+          });
 
-                  return (
-                    <SidebarMenuItem
-                      key={item.title}
-                      className={cn(
-                        item.locked && "pointer-events-none opacity-50",
-                        isV0 && "pointer-events-none"
-                      )}
-                      data-disabled={item.locked}
-                    >
-                      <SidebarMenuButton
-                        asChild={!item.locked}
-                        isActive={isActive}
-                        disabled={item.locked}
+          return (
+            <SidebarGroup
+              className={cn(i === 0 && "rounded-t-none")}
+              key={group.title}
+            >
+              <SidebarGroupLabel>
+                <Bullet className="mr-2" />
+                {group.title}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {visibleItems.map((item) => {
+                    // Check if current pathname matches this item's URL
+                    const isActive = pathname === item.url;
+
+                    return (
+                      <SidebarMenuItem
+                        key={item.title}
                         className={cn(
-                          "disabled:cursor-not-allowed",
-                          item.locked && "pointer-events-none"
+                          item.locked && "pointer-events-none opacity-50",
+                          isV0 && "pointer-events-none"
                         )}
+                        data-disabled={item.locked}
                       >
-                        {item.locked ? (
-                          <div className="flex items-center gap-3 w-full">
-                            <item.icon className="size-5" />
-                            <span>{item.title}</span>
-                          </div>
-                        ) : (
-                          <a href={item.url}>
-                            <item.icon className="size-5" />
-                            <span>{item.title}</span>
-                          </a>
+                        <SidebarMenuButton
+                          asChild={!item.locked}
+                          isActive={isActive}
+                          disabled={item.locked}
+                          className={cn(
+                            "disabled:cursor-not-allowed",
+                            item.locked && "pointer-events-none"
+                          )}
+                        >
+                          {item.locked ? (
+                            <div className="flex items-center gap-3 w-full">
+                              <item.icon className="size-5" />
+                              <span>{item.title}</span>
+                            </div>
+                          ) : (
+                            <a href={item.url}>
+                              <item.icon className="size-5" />
+                              <span>{item.title}</span>
+                            </a>
+                          )}
+                        </SidebarMenuButton>
+                        {item.locked && (
+                          <SidebarMenuBadge>
+                            <LockIcon className="size-5 block" />
+                          </SidebarMenuBadge>
                         )}
-                      </SidebarMenuButton>
-                      {item.locked && (
-                        <SidebarMenuBadge>
-                          <LockIcon className="size-5 block" />
-                        </SidebarMenuBadge>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter className="p-0">
