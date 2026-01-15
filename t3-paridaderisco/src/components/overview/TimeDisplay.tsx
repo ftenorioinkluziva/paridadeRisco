@@ -63,7 +63,7 @@ export function TimeDisplay({ location, temperature }: TimeDisplayProps) {
             <div className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
               {currentDate}
             </div>
-            <div className="text-6xl font-bold tracking-tight">
+            <div className="text-6xl font-bold tracking-tight" suppressHydrationWarning>
               {currentTime}
             </div>
           </div>
