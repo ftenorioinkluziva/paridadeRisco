@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages } from 'ai';
+import { generateText } from 'ai';
 import { getChatModel } from '~/lib/ai/config';
 import { agentTools } from '~/lib/ai/tools';
 import { RISK_PARITY_SYSTEM_PROMPT } from '~/lib/ai/config';
@@ -12,21 +12,16 @@ import { env } from '~/env';
 /**
  * POST /api/chat
  *
- * Chat endpoint com streaming e RAG.
- * Usa os tools do agente para buscar informações e analisar o portfólio.
+ * Chat endpoint "Robust Edition".
+ * Usa generateText com loop manual para garantir que o modelo fale após usar tools.
  */
 export async function POST(req: NextRequest) {
   try {
-    // 1. Autenticação usando JWT customizado (mesmo sistema do tRPC)
+    // 1. Autenticação
     let token = req.headers.get("authorization")?.replace("Bearer ", "");
-
-    // Se não houver token no header, buscar do cookie
-    if (!token) {
-      token = req.cookies.get("auth_token")?.value;
-    }
+    if (!token) token = req.cookies.get("auth_token")?.value;
 
     if (!token) {
-      console.log('[Chat API] No token found');
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -34,74 +29,89 @@ export async function POST(req: NextRequest) {
     try {
       const decoded = jwt.verify(token, env.NEXTAUTH_SECRET!) as { userId: string };
       userId = decoded.userId;
-    } catch (error) {
-      console.log('[Chat API] Invalid token:', error);
+    } catch {
       return new Response('Unauthorized', { status: 401 });
     }
 
-
     // 2. Parse do body
     const body = await req.json();
-    console.log('[Chat API] Received body:', JSON.stringify(body, null, 2));
-
     const { messages } = body as { messages: Array<{ role: string; content: string }> };
 
-    if (!messages || !Array.isArray(messages)) {
-      console.log('[Chat API] Invalid messages:', messages);
-      return new Response(
-        JSON.stringify({ error: 'Invalid request body: messages must be an array' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
+    // 3. Sanitização de Mensagens (vazia -> skip)
+    // Importante para evitar erros de API da Google
+    const history = messages
+      .filter(m => m.role !== 'system') // remove system injetado pelo client se houver
+      .map((m: any) => ({
+        role: m.role,
+        content: m.content || ''
+      }))
+      .filter((m: any) => m.role !== 'assistant' || m.content.trim() !== '');
 
-    // 3. Converter para ModelMessages (apenas role e content)
-    console.log('[Chat API] Converting messages:', messages.length);
-    const modelMessages = messages.map((msg: any) => ({
-      role: msg.role,
-      content: msg.content || msg.parts?.find((p: any) => p.type === 'text')?.text || ''
-    }));
+    console.log('[Chat API] History size:', history.length);
 
-    // 4. Adicionar userId como contexto para os tools
-    // Os tools precisam do userId para buscar dados do portfólio
-    const systemMessage = `${RISK_PARITY_SYSTEM_PROMPT}
+    // 4. Contexto do sistema
+    const systemMessage = `${RISK_PARITY_SYSTEM_PROMPT}\n\n**User ID**: ${userId}`;
 
-**User ID para os tools**: ${userId}`;
-
-    // 5. Configurar modelo e fazer streaming
+    // 5. Configurar modelo
     const model = getChatModel();
 
-    const result = streamText({
+    // 6. Chamada Principal (Passo 1)
+    // Permitimos tools.
+    let result = await generateText({
       model,
       system: systemMessage,
-      messages: modelMessages,
-      // tools: agentTools, // Desabilitado temporariamente para testar
-      // maxSteps: 5,
-      temperature: 0.7,
-      onFinish: async ({ text, toolCalls, finishReason, usage }) => {
-        console.log('[Chat] Finished:', {
-          textLength: text.length,
-          toolCallsCount: toolCalls?.length || 0,
-          finishReason,
-          usage,
-        });
+      messages: history as any,
+      tools: agentTools,
+      maxSteps: 5, // Tenta resolver tudo sozinho primeiro
+      temperature: 0.5,
+    });
+
+    console.log('[Chat API] Pass 1 Finish:', result.finishReason, 'Text:', result.text.length);
+
+    // 7. Check de "Silêncio"
+    // Se parou em tool-calls e não gerou texto, OU se gerou texto vazio
+    if ((result.finishReason === 'tool-calls' || result.finishReason === 'stop') && result.text.trim().length === 0) {
+      console.log('[Chat API] Model went silent. Forcing summary generation via RETRY LOOP...');
+
+      const generatedSteps = result.response.messages;
+
+      const retryMessages = [
+        ...history,
+        ...generatedSteps,
+        {
+          role: 'user',
+          content: 'Analise os dados retornados pelas ferramentas acima e responda à minha pergunta original. Explique o que encontrou.'
+        }
+      ];
+
+      // Chamada de Força (Passo 2) - USANDO GENERATE TEXT PARA EVITAR ERROS DE STREAM
+      const retryResult = await generateText({
+        model,
+        system: systemMessage,
+        messages: retryMessages as any,
+        maxSteps: 1,
+        temperature: 0.7,
+      });
+
+      console.log('[Chat API] Pass 2 Finish:', retryResult.finishReason, 'Text:', retryResult.text.length);
+
+      // Usar o resultado da retentativa
+      result = retryResult;
+    }
+
+    // Formatar resposta final como Data Stream Protocol
+    // Protocolo: 0:"conteudo"\n
+    // Isso engana o useChat fazendo-o achar que recebeu um stream de um único chunk.
+    const textContent = JSON.stringify(result.text);
+    return new Response(`0:${textContent}\n`, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'x-vercel-ai-data-stream': 'v1' // Opcional, mas ajuda a identificar
       },
     });
 
-    // 6. Retornar stream no formato UI Message (compatível com useChat)
-    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('[Chat API] Error:', error);
-
-    if (error instanceof Error) {
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
 }

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerAuthSession } from '~/server/auth';
 import { analyzePortfolio, analyzeAllPortfolios } from '~/lib/ai/portfolio-analyzer';
+import jwt from 'jsonwebtoken';
+import { env } from '~/env';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * POST /api/analyze
@@ -14,7 +18,31 @@ import { analyzePortfolio, analyzeAllPortfolios } from '~/lib/ai/portfolio-analy
 export async function POST(req: NextRequest) {
   try {
     // 1. Autenticação
-    const session = await getServerAuthSession();
+    let session = await getServerAuthSession();
+    console.log('[API Debug] Session (NextAuth):', session ? 'Found' : 'Null');
+
+    // Fallback: Check for auth_token cookie if NextAuth session is missing
+    if (!session?.user) {
+      const authToken = req.cookies.get('auth_token')?.value;
+      if (authToken) {
+        try {
+          const decoded = jwt.verify(authToken, env.NEXTAUTH_SECRET!) as { userId: string };
+          // Manually construct a partial session object
+          session = {
+            user: {
+              id: decoded.userId,
+              name: null,
+              email: null,
+              image: null
+            },
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+          };
+          console.log('[API Debug] Session (Fallback):', JSON.stringify(session, null, 2));
+        } catch (err) {
+          console.error('[API Debug] Invalid auth_token:', err);
+        }
+      }
+    }
 
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

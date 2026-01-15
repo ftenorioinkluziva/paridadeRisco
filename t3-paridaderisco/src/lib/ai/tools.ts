@@ -238,6 +238,7 @@ export const getPortfolioMetricsTool = tool({
   execute: async ({ userId }) => {
     try {
       // Buscar usuário e cesta selecionada
+      console.log('[Tools Debug] getPortfolioMetrics executing for:', userId);
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { selectedBasketId: true },

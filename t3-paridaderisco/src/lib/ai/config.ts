@@ -7,8 +7,7 @@ import { google } from '@ai-sdk/google';
 
 export type AIProvider = 'openai' | 'google';
 export type AIModel =
-  | 'gpt-4.1'
-  | 'gemini-2.5-flash';
+  | 'gemini-2.0-flash';
 
 interface AIConfig {
   provider: AIProvider;
@@ -20,7 +19,7 @@ interface AIConfig {
  */
 export function getAIConfig(): AIConfig {
   const provider = (process.env.AI_PROVIDER || 'google') as AIProvider;
-  const model = (process.env.AI_MODEL || 'gemini-2.5-flash') as AIModel;
+  const model = (process.env.AI_MODEL || 'gemini-2.0-flash') as AIModel;
 
   return { provider, model };
 }

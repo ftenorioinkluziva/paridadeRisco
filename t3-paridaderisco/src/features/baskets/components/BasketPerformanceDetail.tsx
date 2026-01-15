@@ -162,7 +162,7 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
               <div className="p-4 border rounded-lg bg-chart-1/10">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-chart-1">Volatilidade</span>
-                  <Badge variant="outline" className="bg-white">
+                  <Badge variant="outline" className="bg-chart-1/10">
                     {formatPercentAbs(performance.volatilidade)}
                   </Badge>
                 </div>
@@ -184,8 +184,8 @@ export function BasketPerformanceDetail({ performance, cestaName }: BasketPerfor
                     Índice Sharpe
                   </span>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="bg-white">
-                      {performance.sharpeRatio.toFixed(2)}
+                    <Badge variant="outline" className="bg-chart-1/10">
+                      {formatPercentAbs(performance.sharpeRatio)}
                     </Badge>
                     <Badge className={sharpeInfo.color}>
                       {sharpeInfo.label}
