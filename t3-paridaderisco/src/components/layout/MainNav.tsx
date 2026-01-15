@@ -18,11 +18,11 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Portfolio", href: "/portfolio", icon: Briefcase },
-  { name: "Charts", href: "/charts", icon: BarChart3 },
-  { name: "Baskets", href: "/baskets", icon: ShoppingCart },
-  { name: "Funds", href: "/funds", icon: TrendingUp },
-  { name: "Retirement", href: "/retirement", icon: Calculator },
+  { name: "Portfólio", href: "/portfolio", icon: Briefcase },
+  { name: "Gráficos", href: "/charts", icon: BarChart3 },
+  { name: "Cestas", href: "/baskets", icon: ShoppingCart },
+  { name: "Fundos", href: "/funds", icon: TrendingUp },
+  { name: "Aposentadoria", href: "/retirement", icon: Calculator },
   { name: "Chat", href: "/chat", icon: MessageSquare },
   { name: "Admin", href: "/admin", icon: Settings },
 ] as const;

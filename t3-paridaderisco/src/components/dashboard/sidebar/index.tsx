@@ -47,38 +47,38 @@ import { useRouter } from "next/navigation";
 const data = {
   navMain: [
     {
-      title: "Tools",
+      title: "Ferramentas",
       items: [
         {
-          title: "Overview",
+          title: "Visão Geral",
           url: "/overview",
           icon: BracketsIcon,
           isActive: true,
           locked: false,
         },
         {
-          title: "Portfolio",
+          title: "Portfólio",
           url: "/portfolio",
           icon: LayoutIcon,
           isActive: false,
           locked: false,
         },
         {
-          title: "Charts",
+          title: "Gráficos",
           url: "/charts",
           icon: ChartIcon,
           isActive: false,
           locked: false,
         },
         {
-          title: "Baskets",
+          title: "Cestas",
           url: "/baskets",
           icon: BasketIcon,
           isActive: false,
           locked: false,
         },
         {
-          title: "Retirement",
+          title: "Aposentadoria",
           url: "/retirement",
           icon: PiggyBankIcon,
           isActive: false,
@@ -220,7 +220,7 @@ export function DashboardSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>
             <Bullet className="mr-2" />
-            User
+            Usuário
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
