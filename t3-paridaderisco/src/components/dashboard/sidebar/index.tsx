@@ -41,64 +41,52 @@ import LockIcon from "~/components/icons/lock";
 import Image from "next/image";
 import { useIsV0 } from "~/lib/v0-context";
 import { api } from "~/lib/api";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 // This is sample data for the sidebar
-const data = {
-  navMain: [
-    {
-      title: "Ferramentas",
-      items: [
-        {
-          title: "Visão Geral",
-          url: "/overview",
-          icon: BracketsIcon,
-          isActive: true,
-          locked: false,
-        },
-        {
-          title: "Portfólio",
-          url: "/portfolio",
-          icon: LayoutIcon,
-          isActive: false,
-          locked: false,
-        },
-        {
-          title: "Gráficos",
-          url: "/charts",
-          icon: ChartIcon,
-          isActive: false,
-          locked: false,
-        },
-        {
-          title: "Cestas",
-          url: "/baskets",
-          icon: BasketIcon,
-          isActive: false,
-          locked: false,
-        },
-        {
-          title: "Aposentadoria",
-          url: "/retirement",
-          icon: PiggyBankIcon,
-          isActive: false,
-          locked: false,
-        },
-        {
-          title: "Admin",
-          url: "/admin",
-          icon: GearIcon,
-          isActive: false,
-          locked: false,
-        },
-      ],
-    },
-  ],
-  desktop: {
-    title: "Sistema (Online)",
-    status: "online",
+const navItems = [
+  {
+    title: "Ferramentas",
+    items: [
+      {
+        title: "Visão Geral",
+        url: "/overview",
+        icon: BracketsIcon,
+        locked: false,
+      },
+      {
+        title: "Portfólio",
+        url: "/portfolio",
+        icon: LayoutIcon,
+        locked: false,
+      },
+      {
+        title: "Gráficos",
+        url: "/charts",
+        icon: ChartIcon,
+        locked: false,
+      },
+      {
+        title: "Cestas",
+        url: "/baskets",
+        icon: BasketIcon,
+        locked: false,
+      },
+      {
+        title: "Aposentadoria",
+        url: "/retirement",
+        icon: PiggyBankIcon,
+        locked: false,
+      },
+      {
+        title: "Admin",
+        url: "/admin",
+        icon: GearIcon,
+        locked: false,
+      },
+    ],
   },
-};
+];
 
 // Helper function to get user initials
 const getUserInitials = (name?: string) => {
@@ -116,6 +104,7 @@ export function DashboardSidebar({
 }: React.ComponentProps<typeof Sidebar>) {
   const isV0 = useIsV0();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Fetch real user data
   const { data: user } = api.user.getUserProfile.useQuery();
@@ -162,7 +151,7 @@ export function DashboardSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        {data.navMain.map((group, i) => (
+        {navItems.map((group, i) => (
           <SidebarGroup
             className={cn(i === 0 && "rounded-t-none")}
             key={group.title}
@@ -173,43 +162,48 @@ export function DashboardSidebar({
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem
-                    key={item.title}
-                    className={cn(
-                      item.locked && "pointer-events-none opacity-50",
-                      isV0 && "pointer-events-none"
-                    )}
-                    data-disabled={item.locked}
-                  >
-                    <SidebarMenuButton
-                      asChild={!item.locked}
-                      isActive={item.isActive}
-                      disabled={item.locked}
+                {group.items.map((item) => {
+                  // Check if current pathname matches this item's URL
+                  const isActive = pathname === item.url;
+
+                  return (
+                    <SidebarMenuItem
+                      key={item.title}
                       className={cn(
-                        "disabled:cursor-not-allowed",
-                        item.locked && "pointer-events-none"
+                        item.locked && "pointer-events-none opacity-50",
+                        isV0 && "pointer-events-none"
                       )}
+                      data-disabled={item.locked}
                     >
-                      {item.locked ? (
-                        <div className="flex items-center gap-3 w-full">
-                          <item.icon className="size-5" />
-                          <span>{item.title}</span>
-                        </div>
-                      ) : (
-                        <a href={item.url}>
-                          <item.icon className="size-5" />
-                          <span>{item.title}</span>
-                        </a>
+                      <SidebarMenuButton
+                        asChild={!item.locked}
+                        isActive={isActive}
+                        disabled={item.locked}
+                        className={cn(
+                          "disabled:cursor-not-allowed",
+                          item.locked && "pointer-events-none"
+                        )}
+                      >
+                        {item.locked ? (
+                          <div className="flex items-center gap-3 w-full">
+                            <item.icon className="size-5" />
+                            <span>{item.title}</span>
+                          </div>
+                        ) : (
+                          <a href={item.url}>
+                            <item.icon className="size-5" />
+                            <span>{item.title}</span>
+                          </a>
+                        )}
+                      </SidebarMenuButton>
+                      {item.locked && (
+                        <SidebarMenuBadge>
+                          <LockIcon className="size-5 block" />
+                        </SidebarMenuBadge>
                       )}
-                    </SidebarMenuButton>
-                    {item.locked && (
-                      <SidebarMenuBadge>
-                        <LockIcon className="size-5 block" />
-                      </SidebarMenuBadge>
-                    )}
-                  </SidebarMenuItem>
-                ))}
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
