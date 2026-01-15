@@ -246,7 +246,7 @@ export const fundoRouter = createTRPCRouter({
   getAvailableIndices: protectedProcedure.query(async ({ ctx }) => {
     const indices = await ctx.prisma.ativo.findMany({
       where: {
-        type: "Fixed Income",
+        type: "Index",
       },
       select: {
         id: true,
