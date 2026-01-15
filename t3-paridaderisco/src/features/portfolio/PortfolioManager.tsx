@@ -37,13 +37,22 @@ export function PortfolioManager() {
   const [isLoadingRebalance, setIsLoadingRebalance] = useState(false);
   const [includeCashInBase, setIncludeCashInBase] = useState(true);
   
+  const updateProfileMutation = api.user.updateUserProfile.useMutation();
+
   const rebalanceMutation = api.portfolio.getRebalancePlan.useMutation({
     onSuccess: (data) => {
       setRebalanceData(data);
       setIsLoadingRebalance(false);
     },
-    onError: () => {
+    onError: (error) => {
       setIsLoadingRebalance(false);
+
+      // If basket not found, clear the selected basket
+      if (error.message.includes("Basket not found")) {
+        setSelectedBasketId(null);
+        // Clear selectedBasketId in user profile
+        updateProfileMutation.mutate({ selectedBasketId: null });
+      }
     },
   });
 

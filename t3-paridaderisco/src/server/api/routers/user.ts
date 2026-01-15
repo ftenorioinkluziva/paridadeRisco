@@ -29,6 +29,25 @@ export const userRouter = createTRPCRouter({
       });
     }
 
+    // Validate that selectedBasketId exists and belongs to user
+    if (user.selectedBasketId) {
+      const basket = await ctx.prisma.cesta.findFirst({
+        where: {
+          id: user.selectedBasketId,
+          userId: ctx.session.userId,
+        },
+      });
+
+      // If basket no longer exists or doesn't belong to user, clear it
+      if (!basket) {
+        await ctx.prisma.user.update({
+          where: { id: ctx.session.userId },
+          data: { selectedBasketId: null },
+        });
+        user.selectedBasketId = null;
+      }
+    }
+
     return user;
   }),
 

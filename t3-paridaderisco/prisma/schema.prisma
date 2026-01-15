@@ -41,7 +41,7 @@ model User {
   updatedAt       DateTime    @updatedAt
 
   cestas                  Cesta[]
-  selectedBasket          Cesta?  @relation("UserSelectedBasket", fields: [selectedBasketId], references: [id])
+  selectedBasket          Cesta?  @relation("UserSelectedBasket", fields: [selectedBasketId], references: [id], onDelete: SetNull)
   portfolio               Portfolio?
   transacoes              Transacao[]
   fundosInvestimento      FundoInvestimento[]
