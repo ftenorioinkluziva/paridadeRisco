@@ -1,117 +1,160 @@
-import { generateText } from 'ai';
-import { getChatModel } from '~/lib/ai/config';
-import { agentTools } from '~/lib/ai/tools';
-import { RISK_PARITY_SYSTEM_PROMPT } from '~/lib/ai/config';
-import { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { env } from '~/env';
+import { streamText, stepCountIs } from "ai";
+import { getChatModel } from "~/lib/ai/config";
+import { agentTools, setCurrentUserId } from "~/lib/ai/tools";
+import { RISK_PARITY_SYSTEM_PROMPT } from "~/lib/ai/config";
+import { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
+import { env } from "~/env";
+import { saveChat, getChatById, deleteChatById } from "~/lib/chat-queries";
 
-// Removido 'edge' runtime pois NextAuth não é compatível com Edge Runtime
-// export const runtime = 'edge';
+interface SimpleMessage {
+  role: string;
+  content: string;
+}
 
-/**
- * POST /api/chat
- *
- * Chat endpoint "Robust Edition".
- * Usa generateText com loop manual para garantir que o modelo fale após usar tools.
- */
 export async function POST(req: NextRequest) {
   try {
-    // 1. Autenticação
     let token = req.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) token = req.cookies.get("auth_token")?.value;
 
     if (!token) {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     let userId: string;
     try {
-      const decoded = jwt.verify(token, env.NEXTAUTH_SECRET!) as { userId: string };
+      const decoded = jwt.verify(token, env.NEXTAUTH_SECRET!) as {
+        userId: string;
+      };
       userId = decoded.userId;
     } catch {
-      return new Response('Unauthorized', { status: 401 });
+      return new Response("Unauthorized", { status: 401 });
     }
 
-    // 2. Parse do body
     const body = await req.json();
-    const { messages } = body as { messages: Array<{ role: string; content: string }> };
+    const { id, messages } = body as { id: string; messages: SimpleMessage[] };
 
-    // 3. Sanitização de Mensagens (vazia -> skip)
-    // Importante para evitar erros de API da Google
-    const history = messages
-      .filter(m => m.role !== 'system') // remove system injetado pelo client se houver
-      .map((m: any) => ({
-        role: m.role,
-        content: m.content || ''
-      }))
-      .filter((m: any) => m.role !== 'assistant' || m.content.trim() !== '');
+    const coreMessages = messages
+      .filter((m) => m.content && m.content.trim())
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
 
-    console.log('[Chat API] History size:', history.length);
+const systemMessage = `Você é um assistente financeiro especializado em portfólios. Use as ferramentas disponíveis para analisar dados do portfólio do usuário e responder perguntas.
 
-    // 4. Contexto do sistema
-    const systemMessage = `${RISK_PARITY_SYSTEM_PROMPT}\n\n**User ID**: ${userId}`;
+**User ID**: ${userId}
 
-    // 5. Configurar modelo
+**REGRAS**:
+1. Para perguntas sobre o portfólio, use getPortfolioData ou getPortfolioMetrics
+2. Analise os dados retornados e responda de forma clara e útil
+3. Use getInformation para dúvidas sobre conceitos de investimento
+4. Sempre aguarde os resultados das ferramentas antes de responder
+
+Seu objetivo: ajudar o usuário a entender seu portfólio e tomar decisões melhores.`;
     const model = getChatModel();
 
-    // 6. Chamada Principal (Passo 1)
-    // Permitimos tools.
-    let result = await generateText({
+    // Set the current user ID for tools to use
+    setCurrentUserId(userId);
+
+    console.log('[Chat API] Processing chat for user:', userId);
+    console.log('[Chat API] Messages count:', coreMessages.length);
+
+console.log('[Chat API] Model:', model.provider, model.modelId);
+    console.log('[Chat API] System message length:', systemMessage.length);
+    console.log('[Chat API] Core messages:', coreMessages.map(m => ({ role: m.role, contentLength: m.content?.length || 0 })));
+
+    const result = streamText({
       model,
       system: systemMessage,
-      messages: history as any,
+      messages: coreMessages,
       tools: agentTools,
-      maxSteps: 5, // Tenta resolver tudo sozinho primeiro
       temperature: 0.5,
-    });
-
-    console.log('[Chat API] Pass 1 Finish:', result.finishReason, 'Text:', result.text.length);
-
-    // 7. Check de "Silêncio"
-    // Se parou em tool-calls e não gerou texto, OU se gerou texto vazio
-    if ((result.finishReason === 'tool-calls' || result.finishReason === 'stop') && result.text.trim().length === 0) {
-      console.log('[Chat API] Model went silent. Forcing summary generation via RETRY LOOP...');
-
-      const generatedSteps = result.response.messages;
-
-      const retryMessages = [
-        ...history,
-        ...generatedSteps,
-        {
-          role: 'user',
-          content: 'Analise os dados retornados pelas ferramentas acima e responda à minha pergunta original. Explique o que encontrou.'
+      stopWhen: stepCountIs(10), // Allow multiple tool calls + final response
+      onFinish: async ({ text }) => {
+        console.log('[Chat API] AI Response received:', text?.substring(0, 200) + '...');
+        if (userId && text) {
+          try {
+            const allMessages = [
+              ...messages,
+              { role: "assistant", content: text },
+            ];
+            await saveChat({
+              id,
+              messages: allMessages,
+              userId,
+            });
+            console.log('[Chat API] Chat saved successfully');
+          } catch (error) {
+            console.error("Failed to save chat:", error);
+          }
+        } else {
+          console.log('[Chat API] No text or userId received. Text:', text, 'UserId:', userId);
         }
-      ];
-
-      // Chamada de Força (Passo 2) - USANDO GENERATE TEXT PARA EVITAR ERROS DE STREAM
-      const retryResult = await generateText({
-        model,
-        system: systemMessage,
-        messages: retryMessages as any,
-        maxSteps: 1,
-        temperature: 0.7,
-      });
-
-      console.log('[Chat API] Pass 2 Finish:', retryResult.finishReason, 'Text:', retryResult.text.length);
-
-      // Usar o resultado da retentativa
-      result = retryResult;
-    }
-
-    // Formatar resposta final como Data Stream Protocol
-    // Protocolo: 0:"conteudo"\n
-    // Isso engana o useChat fazendo-o achar que recebeu um stream de um único chunk.
-    const textContent = JSON.stringify(result.text);
-    return new Response(`0:${textContent}\n`, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'x-vercel-ai-data-stream': 'v1' // Opcional, mas ajuda a identificar
       },
     });
 
+try {
+    return result.toTextStreamResponse();
+  } catch (streamError) {
+    console.error("[Chat API] Stream Error:", streamError);
+    return new Response(JSON.stringify({ 
+      error: "Stream Error", 
+      details: streamError instanceof Error ? streamError.message : 'Unknown' 
+    }), {
+      status: 500,
+    });
+  }
   } catch (error) {
-    console.error('[Chat API] Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    console.error("[Chat API] General Error:", error);
+    return new Response(JSON.stringify({ 
+      error: "Internal Server Error", 
+      details: error instanceof Error ? error.message : 'Unknown' 
+    }), {
+      status: 500,
+    });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return new Response("Not Found", { status: 404 });
+  }
+
+  let token = req.headers.get("authorization")?.replace("Bearer ", "");
+  if (!token) token = req.cookies.get("auth_token")?.value;
+
+  if (!token) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  let userId: string;
+  try {
+    const decoded = jwt.verify(token, env.NEXTAUTH_SECRET!) as {
+      userId: string;
+    };
+    userId = decoded.userId;
+  } catch {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  try {
+    const chat = await getChatById({ id });
+
+    if (!chat || chat.userId !== userId) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    await deleteChatById({ id });
+
+    return new Response("Chat deleted", { status: 200 });
+  } catch (error) {
+    console.error("[Chat API] Delete error:", error);
+    return new Response("An error occurred while processing your request", {
+      status: 500,
+    });
   }
 }

@@ -23,9 +23,20 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { BookOpen, Plus, Trash2, Eye, Loader2, TrendingUp, FileUp, FileText } from "lucide-react";
 import { ResourceCategory } from "@prisma/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useToast } from "~/hooks/use-toast";
 
 const CATEGORY_LABELS: Record<ResourceCategory, string> = {
   STRATEGY: "Estratégia",
@@ -49,6 +60,7 @@ export function KnowledgeManager() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<ResourceCategory | "ALL">("ALL");
   const [viewResource, setViewResource] = useState<string | null>(null);
+  const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -61,6 +73,7 @@ export function KnowledgeManager() {
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   const utils = api.useUtils();
+  const { toast } = useToast();
 
   // Queries
   const { data: resourcesData, isLoading } = api.knowledge.list.useQuery({
@@ -88,6 +101,19 @@ export function KnowledgeManager() {
     onSuccess: () => {
       utils.knowledge.list.invalidate();
       utils.knowledge.stats.invalidate();
+      setResourceToDelete(null);
+      toast({
+        title: "Sucesso",
+        description: "Recurso deletado com sucesso.",
+      });
+    },
+    onError: (error) => {
+      setResourceToDelete(null);
+      toast({
+        title: "Erro",
+        description: `Erro ao deletar recurso: ${error.message}`,
+        variant: "destructive",
+      });
     },
   });
 
@@ -110,8 +136,12 @@ export function KnowledgeManager() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Tem certeza que deseja deletar este recurso?")) {
-      deleteMutation.mutate({ id });
+    setResourceToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (resourceToDelete) {
+      deleteMutation.mutate({ id: resourceToDelete });
     }
   };
 
@@ -285,46 +315,46 @@ export function KnowledgeManager() {
             </TabsList>
 
             <TabsContent value="manual" className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Estratégia de Paridade de Risco Brasileira"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: Estratégia de Paridade de Risco Brasileira"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category">Categoria</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v as ResourceCategory)}>
-                <SelectTrigger id="category">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria</Label>
+                <Select value={category} onValueChange={(v) => setCategory(v as ResourceCategory)}>
+                  <SelectTrigger id="category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <SelectItem key={key} value={key}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="content">Conteúdo</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Cole aqui o conteúdo completo do artigo, guia ou análise..."
-                rows={10}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                {content.length} caracteres • ~{Math.ceil(content.length / 1000)} chunks esperados
-              </p>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="content">Conteúdo</Label>
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Cole aqui o conteúdo completo do artigo, guia ou análise..."
+                  rows={10}
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {content.length} caracteres • ~{Math.ceil(content.length / 1000)} chunks esperados
+                </p>
+              </div>
             </TabsContent>
 
             <TabsContent value="pdf" className="space-y-4 mt-4">
@@ -499,6 +529,39 @@ export function KnowledgeManager() {
           )}
         </DialogContent>
       </Dialog>
-    </Card>
+
+      {/* AlertDialog: Confirmar Deleção */}
+      <AlertDialog open={!!resourceToDelete} onOpenChange={(open) => !open && setResourceToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o recurso
+              e todos os chunks de embeddings associados da base de conhecimento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deletando...
+                </>
+              ) : (
+                "Sim, deletar"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog >
+    </Card >
   );
 }

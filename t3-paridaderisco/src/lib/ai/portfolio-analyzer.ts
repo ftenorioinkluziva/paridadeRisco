@@ -40,8 +40,7 @@ Se o portfólio estiver bem balanceado e sem problemas, apenas confirme isso sem
       system: RISK_PARITY_SYSTEM_PROMPT,
       prompt: analysisPrompt,
       tools: agentTools,
-      maxSteps: 10, // Permite múltiplas chamadas de tools
-      temperature: 0.5, // Mais determinístico para análises
+      temperature: 0.5,
     });
 
     // 2. Extrair insights do texto gerado

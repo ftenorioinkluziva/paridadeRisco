@@ -4,9 +4,24 @@ import { findRelevantContent, formatSearchResults } from './similarity';
 import { prisma } from '~/lib/prisma';
 import { NotificationType, NotificationPriority, TransactionType } from '@prisma/client';
 
+// Context holder for current user ID
+let currentUserId: string | null = null;
+
+export function setCurrentUserId(userId: string) {
+  currentUserId = userId;
+}
+
+function getCurrentUserId(): string {
+  if (!currentUserId) {
+    throw new Error('User ID not set. Call setCurrentUserId() first.');
+  }
+  return currentUserId;
+}
+
 /**
  * Tool: getInformation
- * Busca informações relevantes na base de conhecimento
+ * Busca informações na base de conhecimento sobre investimentos, paridade de risco, estratégias e cenários econômicos.
+ * Use esta ferramenta SEMPRE que precisar de informações específicas sobre metodologia, ativos ou estratégias.
  */
 export const getInformationTool = tool({
   description: `Busca informações na base de conhecimento sobre investimentos, paridade de risco, estratégias e cenários econômicos.
@@ -33,6 +48,8 @@ export const getInformationTool = tool({
           results: [],
         };
       }
+
+      console.log('[getInformation] Searching for:', question, 'category:', category);
 
       const results = await findRelevantContent(question, {
         limit: 4,
@@ -77,11 +94,12 @@ export const getInformationTool = tool({
 export const getPortfolioDataTool = tool({
   description: `Obtém os dados reais do portfólio do usuário, incluindo posições, valores, alocações e saldo de caixa.
   Use esta ferramenta quando precisar analisar a carteira atual do usuário.`,
-  inputSchema: z.object({
-    userId: z.string().describe('ID do usuário'),
-  }),
-  execute: async ({ userId }) => {
+  inputSchema: z.object({}),
+  execute: async () => {
     try {
+      const userId = getCurrentUserId();
+      console.log('[getPortfolioData] Getting data for user:', userId);
+
       // Buscar portfólio
       const portfolio = await prisma.portfolio.findUnique({
         where: { userId },
@@ -187,6 +205,13 @@ export const getPortfolioDataTool = tool({
       const fundsValue = funds.reduce((sum, fund) => sum + Number(fund.currentValue), 0);
       const fundsInitialInvestment = funds.reduce((sum, fund) => sum + Number(fund.initialInvestment), 0);
 
+      console.log('[getPortfolioData] Found portfolio data:', {
+        positionsCount: positions.length,
+        fundsCount: funds.length,
+        totalValue,
+        cashBalance
+      });
+
       return {
         success: true,
         portfolio: {
@@ -232,13 +257,13 @@ export const getPortfolioDataTool = tool({
 export const getPortfolioMetricsTool = tool({
   description: `Obtém métricas de performance do portfólio, incluindo Risk Balance Score, ganho/perda percentual e valores agregados.
   Use quando precisar avaliar a saúde geral do portfólio.`,
-  inputSchema: z.object({
-    userId: z.string().describe('ID do usuário'),
-  }),
-  execute: async ({ userId }) => {
+  inputSchema: z.object({}),
+  execute: async () => {
     try {
+      const userId = getCurrentUserId();
+      console.log('[getPortfolioMetrics] Getting metrics for user:', userId);
+
       // Buscar usuário e cesta selecionada
-      console.log('[Tools Debug] getPortfolioMetrics executing for:', userId);
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { selectedBasketId: true },
@@ -394,6 +419,13 @@ export const getPortfolioMetricsTool = tool({
         }
       }
 
+      console.log('[getPortfolioMetrics] Calculated metrics:', {
+        totalValue,
+        totalGain,
+        totalGainPercent,
+        riskBalanceScore
+      });
+
       return {
         success: true,
         metrics: {
@@ -426,15 +458,17 @@ export const createNotificationTool = tool({
   description: `Cria uma notificação para o usuário quando você identificar insights importantes, oportunidades ou riscos.
   Use quando encontrar desbalanceamentos significativos ou insights acionáveis.`,
   inputSchema: z.object({
-    userId: z.string().describe('ID do usuário'),
     title: z.string().describe('Título curto e chamativo da notificação'),
     message: z.string().describe('Mensagem detalhada explicando o insight ou alerta'),
     type: z.enum(['INSIGHT', 'WARNING', 'OPPORTUNITY', 'REBALANCE']).describe('Tipo da notificação'),
     priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).describe('Prioridade da notificação'),
     metadata: z.any().optional().describe('Dados adicionais em JSON (opcional)'),
   }),
-  execute: async ({ userId, title, message, type, priority, metadata }) => {
+  execute: async ({ title, message, type, priority, metadata }) => {
     try {
+      const userId = getCurrentUserId();
+      console.log('[createNotification] Creating notification:', { title, type, priority });
+
       const notification = await prisma.notification.create({
         data: {
           userId,
@@ -463,6 +497,24 @@ export const createNotificationTool = tool({
 });
 
 /**
+ * Tool simples para teste
+ */
+export const testTool = tool({
+  description: 'Ferramenta de teste simples',
+  inputSchema: z.object({
+    message: z.string().describe('Mensagem de teste'),
+  }),
+  execute: async ({ message }) => {
+    console.log('[testTool] Received:', message);
+    return {
+      success: true,
+      response: `Test tool received: ${message}`,
+      timestamp: new Date().toISOString(),
+    };
+  },
+});
+
+/**
  * Exportar todos os tools como um objeto
  */
 export const agentTools = {
@@ -470,4 +522,5 @@ export const agentTools = {
   getPortfolioData: getPortfolioDataTool,
   getPortfolioMetrics: getPortfolioMetricsTool,
   createNotification: createNotificationTool,
+  test: testTool, // Mantemos a ferramenta de teste também
 };

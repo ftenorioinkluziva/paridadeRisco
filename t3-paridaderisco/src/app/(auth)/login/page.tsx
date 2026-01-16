@@ -65,18 +65,20 @@ export default function LoginPage() {
     loginMutation.mutate(data);
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+return (
+    <div className="min-h-screen flex items-center justify-center bg-muted py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-foreground">
-            <span className="text-primary">Paridade</span>
-            <span className="text-foreground">Risco</span>
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Entre na sua conta para gerenciar seu portfólio
-          </p>
-        </div>
+        <Card className="text-center">
+          <CardHeader>
+            <h2 className="text-3xl font-bold text-foreground">
+              <span className="text-primary">Paridade</span>
+              <span className="text-foreground">Risco</span>
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Entre na sua conta para gerenciar seu portfólio
+            </p>
+          </CardHeader>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -99,8 +101,8 @@ export default function LoginPage() {
                   {...register("email")}
                   className={errors.email ? "border-red-500" : ""}
                 />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+{errors.email && (
+                  <p className="mt-1 text-sm text-destructive">{errors.email.message}</p>
                 )}
               </div>
 
@@ -113,13 +115,13 @@ export default function LoginPage() {
                   {...register("password")}
                   className={errors.password ? "border-red-500" : ""}
                 />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+{errors.password && (
+                  <p className="mt-1 text-sm text-destructive">{errors.password.message}</p>
                 )}
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">
+{error && (
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md">
                   {error}
                 </div>
               )}

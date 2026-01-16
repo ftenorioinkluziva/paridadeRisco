@@ -41,7 +41,9 @@
       "Bash(if exist node_modules.prisma rmdir /s /q node_modules.prisma)",
       "Bash(rm:*)",
       "Bash(curl:*)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(git push:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

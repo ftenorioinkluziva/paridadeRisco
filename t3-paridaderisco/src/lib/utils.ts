@@ -5,6 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function generateUUID(): string {
+  return crypto.randomUUID()
+}
+
 /**
  * Gets the decimal places based on asset type
  * @param assetType - The type of the asset (string from database)
